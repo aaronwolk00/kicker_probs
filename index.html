@@ -3,23 +3,23 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>NFL FG Probability — Pro Coach UI (v2)</title>
+<title>NFL FG Probability — Pro Coach UI (v3)</title>
 <style>
   :root{
-    --bg:#0b0f14;--card:#10161f;--muted:#9fb0c3;--text:#e9f0f7;--acc:#3da9fc;--accent-2:#7ae582;--warn:#ffcc66;--border:#233041;--grid:#1f2a38;
-    --focus: 0 0 0 3px #264b9333, 0 0 0 1px var(--acc);
+    --bg:#0b0f14;--card:#0f141b;--muted:#9fb0c3;--text:#e9f0f7;--acc:#3da9fc;--accent-2:#7ae582;--warn:#ffcc66;--border:#233041;--grid:#1f2a38;--danger:#ff8e8e;--good:#7ae582;
+    --focus:0 0 0 3px #264b9333,0 0 0 1px var(--acc);
   }
   html,body{height:100%}
   *{box-sizing:border-box}
   body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Inter,Arial;background:var(--bg);color:var(--text)}
   a{color:var(--acc)}
-  .wrap{max-width:1200px;margin:28px auto;padding:0 16px}
+  .wrap{max-width:1240px;margin:28px auto;padding:0 16px}
   .topbar{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:16px}
   .brand{display:flex;gap:12px;align-items:center}
   h1{font-size:24px;margin:0 0 4px 0}
   .tagline{color:var(--muted);font-size:13px}
   .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.25);margin-bottom:16px}
-  .grid{display:grid;grid-template-columns:360px 1fr;gap:16px}
+  .grid{display:grid;grid-template-columns:380px 1fr;gap:16px}
   @media (max-width: 980px){.grid{grid-template-columns:1fr}}
   label{font-size:13px;color:var(--muted)}
   .row{display:grid;grid-template-columns:1fr 120px;gap:8px;align-items:center;margin:10px 0}
@@ -28,7 +28,7 @@
   .controls input[type="range"]{width:100%}
   .muted{color:var(--muted);font-size:12px}
   .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:#0f141b;border:1px solid var(--border);color:var(--muted);font-size:12px}
-  .kmeta{font-size:12px;color:var(--muted);margin-top:4px}
+  .kmeta{font-size:12px;color:var(--muted);margin-top:6px}
   .btn{background:#0f141b;border:1px solid var(--border);color:var(--text);border-radius:10px;padding:8px 10px;cursor:pointer}
   .btn:hover{border-color:#37506b}
   .btn.primary{background:linear-gradient(180deg,#1a2634,#111823);border-color:#2b415a}
@@ -39,7 +39,7 @@
   .stat{background:#0f141b;border:1px solid var(--border);border-radius:12px;padding:12px}
   .stat h3{margin:0 0 2px 0;font-size:15px;color:var(--muted)}
   .stat .val{font-size:20px;font-weight:700}
-  .svgbox{width:100%;height:280px;background:#0f141b;border:1px solid var(--border);border-radius:14px}
+  .svgbox{width:100%;height:300px;background:#0f141b;border:1px solid var(--border);border-radius:14px}
   .warn{color:var(--warn)}
   .toggle{display:flex;gap:8px;align-items:center}
   .right{display:flex;gap:12px;align-items:center}
@@ -69,8 +69,10 @@
   .kbd-row{display:flex;gap:8px;align-items:center}
   .subtle{opacity:.85}
   .danger{color:#ff8e8e}
-  /* focus */
-  .btn:focus, select:focus, input:focus{outline:none;box-shadow:var(--focus)}
+  .good{color:#7ae582}
+  details.diag{background:#0f141b;border:1px dashed #2a3a51;border-radius:12px;padding:10px}
+  details.diag > summary{cursor:pointer;color:#a6c1da}
+  .tag{display:inline-flex;align-items:center;gap:6px;padding:2px 8px;border:1px solid #2a3a51;border-radius:999px;font-size:11px;color:#a6c1da}
 </style>
 </head>
 <body>
@@ -80,7 +82,7 @@
       <div class="badge">Coach View</div>
       <div>
         <h1>Field Goal Probability — Coupled</h1>
-        <div class="tagline">Bilinear Make% (Temp×Wind) + recency-weighted kicker deltas + context-driven Attempt% with coupling.</div>
+        <div class="tagline">Bilinear Make% (Temp×Wind) + recency‑weighted kicker deltas + context‑driven Attempt% with coupling. Now team‑aware.</div>
       </div>
     </div>
     <div class="right">
@@ -105,6 +107,7 @@
         <button class="btn ghost" data-preset-wind="5">Breeze</button>
         <button class="btn ghost" data-preset-wind="15">Windy</button>
       </div>
+
       <div class="row">
         <label for="distance">Distance (yards)</label>
         <input id="distance" type="range" min="18" max="68" step="1" value="61"/>
@@ -138,6 +141,25 @@
         </div>
       </div>
 
+      <!-- Team + Kicker -->
+      <div id="teamBlock" class="row-2" style="display:none">
+        <div>
+          <label for="team">Team</label>
+          <select id="team"><option value="">— none —</option></select>
+          <div class="hint">Starter shown in parentheses.</div>
+        </div>
+        <div class="row-2" style="margin:0;grid-template-columns:1fr 1fr">
+          <div class="toggle" title="Always use the team's starting kicker">
+            <span class="muted">Use team starter</span>
+            <label class="switch"><input id="useStarter" type="checkbox" checked/><span class="slider"></span></label>
+          </div>
+          <div class="toggle" title="Include inactive kickers in lists">
+            <span class="muted">Show inactive</span>
+            <label class="switch"><input id="showInactive" type="checkbox"/><span class="slider"></span></label>
+          </div>
+        </div>
+      </div>
+
       <div class="row-2">
         <div>
           <label for="kickerSearch">Kicker (search)</label>
@@ -146,6 +168,7 @@
         <div>
           <label for="kicker">Kicker</label>
           <select id="kicker"><option value="">— none —</option></select>
+          <div class="hint" id="kickerStatus"></div>
         </div>
       </div>
 
@@ -206,6 +229,7 @@
           <label class="pill">Load kicker banded JSON <input type="file" id="fileKickers" accept=".json"/></label>
           <label class="pill">Load attempt grid <input type="file" id="fileAttempt" accept=".json"/></label>
           <label class="pill">Load attempt sensitivity <input type="file" id="fileSens" accept=".json"/></label>
+          <label class="pill">Load team–kicker roster <input type="file" id="fileRoster" accept=".json"/></label>
           <button id="btnUseUploads" class="btn">Use uploaded files</button>
         </div>
       </div>
@@ -216,14 +240,14 @@
       <div class="statbar" id="statbar">
         <div class="stat"><h3>Make | Attempt</h3><div class="val" id="statMake">—</div><div class="muted" id="statMakeCI">—</div></div>
         <div class="stat"><h3>Attempt % (base)</h3><div class="val" id="statAttemptBase">—</div><div class="muted" id="statAttemptBaseCI">—</div></div>
-        <div class="stat"><h3>Attempt % (kicker-adjusted)</h3><div class="val" id="statAttemptAdj">—</div><div class="muted">Coupled</div></div>
+        <div class="stat"><h3>Attempt % (kicker‑adjusted)</h3><div class="val" id="statAttemptAdj">—</div><div class="muted">Coupled</div></div>
         <div class="stat"><h3>Overall Make %</h3><div class="val" id="statOverall">—</div><div class="muted">= AttemptAdj × Make</div></div>
       </div>
 
       <div class="divider"></div>
 
       <h3 style="margin:0 0 8px 0">Distance Profile</h3>
-      <svg id="chart" class="svgbox" viewBox="0 0 880 280" preserveAspectRatio="none" role="img" aria-label="Make% curve with confidence band and attempt% overlay"></svg>
+      <svg id="chart" class="svgbox" viewBox="0 0 880 300" preserveAspectRatio="none" role="img" aria-label="Make% curve with confidence band and attempt% overlay"></svg>
       <div class="vis-legend">
         <div class="legend-item"><span class="dot make"></span><span class="muted">Make%</span></div>
         <div class="legend-item"><span class="dot ci"></span><span class="muted">CI</span></div>
@@ -240,18 +264,27 @@
       </div>
 
       <div id="details" class="muted" style="margin-top:10px">—</div>
+
+      <div class="divider"></div>
+
+      <details id="diag" class="diag">
+        <summary>Diagnostics</summary>
+        <div id="diagBody" class="muted" style="margin-top:10px">—</div>
+        <div class="btnbar" style="margin-top:8px">
+          <button id="btnCopyDiag" class="btn">Copy diagnostics</button>
+        </div>
+      </details>
     </div>
   </div>
 
   <div class="card footer">
     <div class="muted">Tip: Press <span class="kbd">↑</span>/<span class="kbd">↓</span> to adjust distance; <span class="kbd">⌘/Ctrl</span> + <span class="kbd">C</span> on the chart to copy a PNG.</div>
-    <div class="muted subtle">v2 UI • Built for rapid what‑ifs & decision clarity.</div>
+    <div class="muted subtle">v3 UI • Team aware • Professional diagnostics.</div>
   </div>
 </div>
 
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-<!-- Embedded tiny demo data (used only if fetch/uploads fail) -->
 <script id="demo_grid" type="application/json">{
   "meta":{"temps":[20,50,80],"winds":[0,10,20]},
   "grid":[
@@ -272,7 +305,8 @@
 }</script>
 <script id="demo_kickers" type="application/json">[
   {"kicker_id":"k1","kicker_name":"A. Accurate","attempts_eff":120.2,"bands":{"short":{"delta_logit":0.05,"se":0.02},"mid":{"delta_logit":0.04,"se":0.03},"long":{"delta_logit":0.03,"se":0.05},"xlong":{"delta_logit":0.01,"se":0.08}}},
-  {"kicker_id":"k2","kicker_name":"B. Boomer","attempts_eff":90.4,"bands":{"short":{"delta_logit":-0.02,"se":0.03},"mid":{"delta_logit":0.00,"se":0.04},"long":{"delta_logit":0.05,"se":0.05},"xlong":{"delta_logit":0.07,"se":0.06}}}
+  {"kicker_id":"k2","kicker_name":"B. Boomer","attempts_eff":90.4,"bands":{"short":{"delta_logit":-0.02,"se":0.03},"mid":{"delta_logit":0.00,"se":0.04},"long":{"delta_logit":0.05,"se":0.05},"xlong":{"delta_logit":0.07,"se":0.06}}},
+  {"kicker_id":"gost","kicker_name":"S. Gostkowski","attempts_eff":0.0,"bands":{"short":{"delta_logit":0.00,"se":0.00}}}
 ]</script>
 <script id="demo_attempt" type="application/json">{
   "grid":[
@@ -282,10 +316,17 @@
   ]
 }</script>
 <script id="demo_sens" type="application/json">{"A":0.0,"B":0.55,"C":0.45}</script>
+<script id="demo_roster" type="application/json">{
+  "teams":[
+    {"team_id":"NYJ","team_name":"Jets","starter_kicker_id":"k1","kickers":[{"kicker_id":"k1","name":"A. Accurate","status":"active"}]},
+    {"team_id":"TEN","team_name":"Titans","starter_kicker_id":"k2","kickers":[{"kicker_id":"k2","name":"B. Boomer","status":"active"},{"kicker_id":"gost","name":"S. Gostkowski","status":"inactive"}]}
+  ]
+}</script>
 
 <script>
-let GRID=null, KICKERS=[], ATTEMPT=null, SENS=null;
+let GRID=null, KICKERS=[], ATTEMPT=null, SENS=null, ROSTER=null;
 let gridIndex=new Map(), attemptIndex=new Map(), KMAP=new Map();
+let TEAM_MAP=new Map(), KICKER_STATUS=new Map(), TEAM_OPTIONS=[];
 let temps=[], winds=[];
 
 const $ = sel => document.querySelector(sel);
@@ -294,8 +335,13 @@ const uiDist    = $('#uiDist');
 const envSel    = $('#env');
 const tempInp   = $('#temp');
 const windInp   = $('#wind');
+const teamSel   = $('#team');
+const useStarter= $('#useStarter');
+const showInactive = $('#showInactive');
+const teamBlock = $('#teamBlock');
 const kickerSel = $('#kicker');
 const kickerSearch = $('#kickerSearch');
+const kickerStatus = $('#kickerStatus');
 const bandSel   = $('#band');
 const scoreBin  = $('#scoreBin');
 const timeBin   = $('#timeBin');
@@ -309,18 +355,21 @@ const btnCSV    = $('#btnCSV');
 const btnPNG    = $('#btnPNG');
 const btnReset  = $('#btnReset');
 const btnShare  = $('#btnShare');
+const btnCopyDiag = $('#btnCopyDiag');
 const toastEl   = $('#toast');
 
 const statMake=$('#statMake'), statMakeCI=$('#statMakeCI');
 const statAttemptBase=$('#statAttemptBase'), statAttemptBaseCI=$('#statAttemptBaseCI');
 const statAttemptAdj=$('#statAttemptAdj'), statOverall=$('#statOverall');
 const detailsEl=$('#details');
+const diagBody=$('#diagBody');
 
 const upWrap       = $('#fallbackUpload');
 const fileGrid     = $('#fileGrid');
 const fileKickers  = $('#fileKickers');
 const fileAttempt  = $('#fileAttempt');
 const fileSens     = $('#fileSens');
+const fileRoster   = $('#fileRoster');
 const btnUseUploads= $('#btnUseUploads');
 
 function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
@@ -334,52 +383,111 @@ function onEnvChange(){ if (envSel.value === 'indoor'){ windInp.value = 0; windI
 
 function buildMakeIndex(){ gridIndex.clear(); temps = GRID.meta.temps.slice(); winds = GRID.meta.winds.slice(); for(const r of GRID.grid){ gridIndex.set(`${r.indoor_outdoor}|${r.temp_F}|${r.wind_mph}|${r.distance}`, r); } }
 function buildAttemptIndex(){ attemptIndex.clear(); for(const r of ATTEMPT.grid){ attemptIndex.set(`${r.indoor_outdoor}|${r.score_bin}|${r.time_bin}|${r.ytg_bin}|${r.distance}`, r); } }
-function populateKickers(){ KMAP.clear(); kickerSel.innerHTML = `<option value="">— none —</option>`; const frag = document.createDocumentFragment(); const sorted = [...KICKERS].sort((a,b)=> (b.attempts_eff||0) - (a.attempts_eff||0)); for(const k of sorted){ const opt = document.createElement('option'); opt.value = k.kicker_id; opt.textContent = `${k.kicker_name || k.kicker_id} (effAtt=${(k.attempts_eff||0).toFixed(1)})`; frag.appendChild(opt); KMAP.set(k.kicker_id, k); } kickerSel.appendChild(frag); }
+function populateKickers(all=true){ KMAP.clear(); for(const k of KICKERS){ KMAP.set(k.kicker_id, k); } refreshKickerOptions(); }
+
+function populateTeams(){ TEAM_OPTIONS = []; TEAM_MAP.clear(); KICKER_STATUS.clear(); if(!ROSTER||!ROSTER.teams){ teamBlock.style.display='none'; return; } teamBlock.style.display='grid';
+  const frag=document.createDocumentFragment(); const defOpt=document.createElement('option'); defOpt.value=''; defOpt.textContent='— none —'; frag.appendChild(defOpt);
+  for(const t of ROSTER.teams){ TEAM_MAP.set(t.team_id, t); const starter = t.starter_kicker_id; const starterName = (KMAP.get(starter)?.kicker_name) || (t.kickers.find(k=>k.kicker_id===starter)?.name) || starter || '';
+    const opt=document.createElement('option'); opt.value=t.team_id; opt.textContent=`${t.team_id} (${starterName||'—'})`; frag.appendChild(opt);
+    for(const k of (t.kickers||[])){ KICKER_STATUS.set(k.kicker_id, k.status||'active'); }
+    TEAM_OPTIONS.push(t.team_id);
+  }
+  teamSel.innerHTML=''; teamSel.appendChild(frag);
+}
 
 function neighbors(val, arr){ if (arr.length===0) return [val,val]; if (val <= arr[0]) return [arr[0], arr[0]]; if (val >= arr[arr.length-1]) return [arr[arr.length-1], arr[arr.length-1]]; for (let i=0; i<arr.length-1; i++){ if (val >= arr[i] && val <= arr[i+1]) return [arr[i], arr[i+1]]; } return [arr[0], arr[0]]; }
 function nearest(val, arr){ if(!arr || arr.length===0) return val; let best = arr[0], bd = Math.abs(val-arr[0]); for(const x of arr){ const d = Math.abs(val-x); if (d<bd){ bd=d; best=x; } } return best; }
 function lookupMake(env, temp, wind, dist){ return gridIndex.get(`${env}|${temp}|${wind}|${dist}`) || null; }
-function interpBilinearLogit(env, temp, wind, dist){ if (env === 'indoor') wind = 0; const [t0,t1]=neighbors(temp, temps), [w0,w1]=neighbors(wind, winds); const sameT=(t0===t1), sameW=(w0===w1); const r00=lookupMake(env,t0,w0,dist), r10=lookupMake(env,t1,w0,dist), r01=lookupMake(env,t0,w1,dist), r11=lookupMake(env,t1,w1,dist); if (!r00 || (!sameT && !r10) || (!sameW && !r01) || (!sameT && !sameW && !r11)){ const tN=nearest(temp,temps), wN=(env==='indoor'?0:nearest(wind,winds)); const r=lookupMake(env,tN,wN,dist); if (!r) return null; return {mean:r.prob_mean, lo:r.prob_p10, hi:r.prob_p90, baseMean:r.prob_mean, mode:"nearest"}; } function blend(field){ const L00=logit(r00[field]), L10=sameT?L00:logit(r10[field]); const L01=sameW?L00:logit(r01[field]), L11=(sameT&&sameW)?L00:logit(r11[field]); const wt=sameT?0:(temp-t0)/(t1-t0), ww=sameW?0:(wind-w0)/(w1-w0); const L0=L00*(1-wt)+L10*wt, L1=L01*(1-wt)+L11*wt; return sigmoid(L0*(1-ww)+L1*ww); } return {mean:blend("prob_mean"), lo:blend("prob_p10"), hi:blend("prob_p90"), baseMean:blend("prob_mean"), mode:"bilinear"}; }
+function interpBilinearLogit(env, temp, wind, dist){ if (env === 'indoor') wind = 0; const [t0,t1]=neighbors(temp, temps), [w0,w1]=neighbors(wind, winds); const sameT=(t0===t1), sameW=(w0===w1); const r00=lookupMake(env,t0,w0,dist), r10=lookupMake(env,t1,w0,dist), r01=lookupMake(env,t0,w1,dist), r11=lookupMake(env,t1,w1,dist); if (!r00 || (!sameT && !r10) || (!sameW && !r01) || (!sameT && !sameW && !r11)){ const tN=nearest(temp,temps), wN=(env==='indoor'?0:nearest(wind,winds)); const r=lookupMake(env,tN,wN,dist); if (!r) return null; return {mean:r.prob_mean, lo:r.prob_p10, hi:r.prob_p90, baseMean:r.prob_mean, mode:"nearest", meta:{t0:tN,t1:tN,wt:0,w0:wN,w1:wN,ww:0}}; } function blend(field){ const L00=logit(r00[field]), L10=sameT?L00:logit(r10[field]); const L01=sameW?L00:logit(r01[field]), L11=(sameT&&sameW)?L00:logit(r11[field]); const wt=sameT?0:(temp-t0)/(t1-t0), ww=sameW?0:(wind-w0)/(w1-w0); const L0=L00*(1-wt)+L10*wt, L1=L01*(1-wt)+L11*wt; return {p:sigmoid(L0*(1-ww)+L1*ww), wt, ww}; } const m=blend("prob_mean"), lo=blend("prob_p10"), hi=blend("prob_p90"); return {mean:m.p, lo:lo.p, hi:hi.p, baseMean:sigmoid(logit(r00.prob_mean)*(1-m.wt)*(1-m.ww)), mode:"bilinear", meta:{t0,t1,wt:m.wt,w0,w1,ww:m.ww}}; }
 
 // kicker band blending
 const BAND_BOUNDS = { short:39, mid:49, long:59 };
 const BLEND_W = 2;
 function bandWeightsForDistance(d){ if (d <= BAND_BOUNDS.short - BLEND_W) return {short:1}; if (d <  BAND_BOUNDS.short + BLEND_W){ const t=(d-(BAND_BOUNDS.short-BLEND_W))/(2*BLEND_W); return {short:1-t, mid:t}; } if (d <= BAND_BOUNDS.mid - BLEND_W) return {mid:1}; if (d <  BAND_BOUNDS.mid + BLEND_W){ const t=(d-(BAND_BOUNDS.mid-BLEND_W))/(2*BLEND_W); return {mid:1-t, long:t}; } if (d <= BAND_BOUNDS.long - BLEND_W) return {long:1}; if (d <  BAND_BOUNDS.long + BLEND_W){ const t=(d-(BAND_BOUNDS.long-BLEND_W))/(2*BLEND_W); return {long:1-t, xlong:t}; } return {xlong:1}; }
-function kickerShiftForDistance(krec, d){ if (!krec || !krec.bands) return {delta:0, se:0}; const w=bandWeightsForDistance(d); let delta=0, var_sum=0, wsum=0; for (const band of Object.keys(w)){ const ww=w[band], b=krec.bands[band]; if (!b) continue; const dlt=(typeof b.delta_logit==="number")?b.delta_logit:0; const se=(typeof b.se==="number")?b.se:0; delta += ww*dlt; var_sum += (ww*ww)*(se*se); wsum += ww; } if (wsum<=0) return {delta:0,se:0}; return {delta, se:Math.sqrt(var_sum)}; }
+function kickerShiftForDistance(krec, d){ if (!krec || !krec.bands) return {delta:0, se:0, weights:{}}; const w=bandWeightsForDistance(d); let delta=0, var_sum=0, wsum=0; for (const band of Object.keys(w)){ const ww=w[band], b=krec.bands[band]; if (!b) continue; const dlt=(typeof b.delta_logit==="number")?b.delta_logit:0; const se=(typeof b.se==="number")?b.se:0; delta += ww*dlt; var_sum += (ww*ww)*(se*se); wsum += ww; } if (wsum<=0) return {delta:0,se:0,weights:w}; return {delta, se:Math.sqrt(var_sum), weights:w}; }
 
 function ciScale(band){ if (band===80) return 1.0; if (band===68) return 0.68/0.80; if (band===90) return 0.90/0.80; return 1.0; }
 function lookupAttempt(env, sBin, tBin, yBin, dist){ return attemptIndex.get(`${env}|${sBin}|${tBin}|${yBin}|${dist}`) || null; }
 
-function stateFromControls(){ return { d:clamp(parseInt(distance.value,10)||61,18,68), env:envSel.value, t:parseFloat(tempInp.value)||65, w:parseFloat(windInp.value)||0, kid:kickerSel.value||'', band:parseInt(bandSel.value,10)||80, s:scoreBin.value, tm:timeBin.value, y:ytgBin.value, showAttempt: toggleAttempt.checked, axes: toggleAxes.checked }; }
-function controlsFromState(s){ distance.value=s.d; uiDist.value=s.d; envSel.value=s.env; tempInp.value=s.t; windInp.value=s.w; kickerSel.value=s.kid||''; bandSel.value=s.band; scoreBin.value=s.s; timeBin.value=s.tm; ytgBin.value=s.y; toggleAttempt.checked = !!s.showAttempt; toggleAxes.checked = !!s.axes; onEnvChange(); }
+function stateFromControls(){ return { d:clamp(parseInt(distance.value,10)||61,18,68), env:envSel.value, t:parseFloat(tempInp.value)||65, w:parseFloat(windInp.value)||0, team:teamSel?.value||'', useStarter: !!useStarter?.checked, showInactive: !!showInactive?.checked, kid:kickerSel.value||'', band:parseInt(bandSel.value,10)||80, s:scoreBin.value, tm:timeBin.value, y:ytgBin.value, showAttempt: toggleAttempt.checked, axes: toggleAxes.checked }; }
+function controlsFromState(s){ distance.value=s.d; uiDist.value=s.d; envSel.value=s.env; tempInp.value=s.t; windInp.value=s.w; if(teamSel){ teamSel.value=s.team||''; } if(useStarter){ useStarter.checked=!!s.useStarter; } if(showInactive){ showInactive.checked=!!s.showInactive; }
+  kickerSel.value=s.kid||''; bandSel.value=s.band; scoreBin.value=s.s; timeBin.value=s.tm; ytgBin.value=s.y; toggleAttempt.checked = !!s.showAttempt; toggleAxes.checked = !!s.axes; onEnvChange(); if(useStarter?.checked) { kickerSel.disabled=true; kickerSearch.disabled=true; } else { kickerSel.disabled=false; kickerSearch.disabled=false; } refreshKickerOptions(); }
 function encodeState(s){ const p=new URLSearchParams(s); return p.toString(); }
-function decodeState(qs){ const p=new URLSearchParams(qs); const num=(k,def)=>{const v=parseFloat(p.get(k)); return Number.isFinite(v)?v:def}; const int=(k,def)=>{const v=parseInt(p.get(k),10); return Number.isFinite(v)?v:def}; return { d:int('d',61), env:p.get('env')||'outdoor', t:num('t',65), w:num('w',5), kid:p.get('kid')||'', band:int('band',80), s:p.get('s')||'close', tm:p.get('tm')||'late', y:p.get('y')||'med', showAttempt: p.get('showAttempt')!=='false', axes: p.get('axes')!=='false' }; }
+function decodeState(qs){ const p=new URLSearchParams(qs); const num=(k,def)=>{const v=parseFloat(p.get(k)); return Number.isFinite(v)?v:def}; const int=(k,def)=>{const v=parseInt(p.get(k),10); return Number.isFinite(v)?v:def}; return { d:int('d',61), env:p.get('env')||'outdoor', t:num('t',65), w:num('w',5), team:p.get('team')||'', useStarter:p.get('useStarter')!=='false', showInactive:p.get('showInactive')==='true', kid:p.get('kid')||'', band:int('band',80), s:p.get('s')||'close', tm:p.get('tm')||'late', y:p.get('y')||'med', showAttempt: p.get('showAttempt')!=='false', axes: p.get('axes')!=='false' }; }
+
+function refreshKickerOptions(){ const term=(kickerSearch.value||'').toLowerCase(); const team = teamSel?.value||''; const includeInactive = !!showInactive?.checked; const visible = [];
+  kickerSel.innerHTML = `<option value="">— none —</option>`; const frag=document.createDocumentFragment();
+  const pool = [];
+  if(team && TEAM_MAP.has(team)){
+    const tk = TEAM_MAP.get(team).kickers||[]; for(const k of tk){ pool.push(k.kicker_id); }
+  } else { for(const k of KICKERS){ pool.push(k.kicker_id); }
+  }
+  const seen=new Set();
+  for(const kid of pool){ if(seen.has(kid)) continue; seen.add(kid); const rec=KMAP.get(kid); if(!rec) continue; const status = (KICKER_STATUS.get(kid)||'active'); if(status!=='active' && !includeInactive) continue; const labelBase = `${rec.kicker_name || kid}`; const extra = [];
+    if(TEAM_MAP.size){ const teams=[]; for(const t of TEAM_MAP.values()){ if((t.kickers||[]).some(x=>x.kicker_id===kid)) teams.push(t.team_id); }
+      if(teams.length) extra.push(teams.join('/')); }
+    extra.push(`effAtt=${(rec.attempts_eff||0).toFixed(1)}`);
+    if(status!=='active') extra.push('inactive');
+    const opt=document.createElement('option'); opt.value=kid; opt.textContent = `${labelBase} (${extra.join(' · ')})`; if(term && !opt.textContent.toLowerCase().includes(term)) continue; frag.appendChild(opt); visible.push(opt);
+  }
+  kickerSel.appendChild(frag);
+  // Default to team starter when set
+  const teamRec = TEAM_MAP.get(team||'');
+  if(teamRec && useStarter?.checked){ const starterId = teamRec.starter_kicker_id; if(starterId && [...kickerSel.options].some(o=>o.value===starterId)){ kickerSel.value = starterId; }
+  }
+  kickerStatus.textContent = statusString();
+}
+
+function statusString(){ const kid=kickerSel.value; if(!kid) return '';
+  const status = (KICKER_STATUS.get(kid)||'active'); let tags=[]; if(status==='inactive') tags.push('inactive');
+  const teams=[]; for(const t of TEAM_MAP.values()){ if((t.kickers||[]).some(x=>x.kicker_id===kid)) teams.push(t.team_id); }
+  const teamStr = teams.length? `Teams: ${teams.join('/')}`: '';
+  if(teamSel?.value && TEAM_MAP.has(teamSel.value)){
+    const t=TEAM_MAP.get(teamSel.value); if(t.starter_kicker_id===kid) tags.push(`starter for ${t.team_id}`);
+  }
+  return [teamStr, ...tags].filter(Boolean).join(' · ');
+}
 
 function recompute(){ if (!GRID || !ATTEMPT || !SENS) return; const st = stateFromControls(); uiDist.value = st.d; // Base league make (no kicker)
-  const base = interpBilinearLogit(st.env, st.t, st.w, st.d); if (!base){ statMake.textContent='No data'; statMakeCI.textContent=''; detailsEl.textContent=''; kmetaEl.textContent=''; drawChart(st.env,st.t,st.w,st.d,st); return; }
+  const base = interpBilinearLogit(st.env, st.t, st.w, st.d); if (!base){ statMake.textContent='No data'; statMakeCI.textContent=''; detailsEl.textContent=''; kmetaEl.textContent=''; diagBody.textContent=''; drawChart(st.env,st.t,st.w,st.d,st); return; }
   let pMakeLeague = base.baseMean; // before kicker
   let pMean = base.mean, pLo = base.lo, pHi = base.hi;
   // Kicker adjust in logit space
-  const kid = st.kid; let kmeta = ""; if (kid){ const krec = KMAP.get(kid); const ks = kickerShiftForDistance(krec, st.d); const delta = ks.delta, se = ks.se||0; pMean = sigmoid(logit(pMean) + delta); pLo = sigmoid(logit(pLo) + delta - se); pHi = sigmoid(logit(pHi) + delta + se); const bands = Object.keys(krec?.bands||{}).join(', '); kmeta = `Kicker: ${krec?.kicker_name || kid} · effAtt=${(krec?.attempts_eff||0).toFixed(1)} · bands=[${bands}] · Δlogit(d)=${delta.toFixed(3)}`; }
-  kmetaEl.textContent = kmeta;
+  const kid = st.useStarter && st.team && TEAM_MAP.get(st.team)?.starter_kicker_id ? TEAM_MAP.get(st.team).starter_kicker_id : (st.kid||'');
+  if(kid && kickerSel.value!==kid){ kickerSel.value=kid; }
+  let kmeta = ""; let advLogit = 0; let ksWeights={};
+  if (kid){ const krec = KMAP.get(kid); const ks = kickerShiftForDistance(krec, st.d); const delta = ks.delta, se = ks.se||0; ksWeights=ks.weights||{}; advLogit = (logit(sigmoid(logit(pMean)+delta)) - logit(pMakeLeague)); pMean = sigmoid(logit(pMean) + delta); pLo = sigmoid(logit(pLo) + delta - se); pHi = sigmoid(logit(pHi) + delta + se); const bands = Object.keys(krec?.bands||{}).join(', '); kmeta = `Kicker: ${krec?.kicker_name || kid} · effAtt=${(krec?.attempts_eff||0).toFixed(1)} · bands=[${bands}] · Δlogit(d)=${delta.toFixed(3)}`; }
+  kmetaEl.textContent = kmeta; kickerStatus.textContent = statusString();
   // Rescale CI to selected band
   const lmean = logit(pMean), scale = ciScale(st.band); let llo = logit(pLo), lhi = logit(pHi), half=(lhi-llo)/2; llo = lmean - half*scale; lhi = lmean + half*scale; pLo = sigmoid(llo); pHi = sigmoid(lhi);
   // Attempt base (league context)
   const rA = lookupAttempt(st.env, st.s, st.tm, st.y, st.d); const pAttemptBase = rA ? rA.prob_attempt_mean : 0.0; const pAttemptBase_lo = rA ? rA.prob_attempt_p10 : 0.0; const pAttemptBase_hi = rA ? rA.prob_attempt_p90 : 0.0;
   // Attempt adjusted by kicker advantage (coupling)
-  const A=SENS.A, B=SENS.B, C=SENS.C; const lA = A + C*logit(pAttemptBase) + B*(logit(pMean) - logit(pMakeLeague)); const pAttemptAdj = sigmoid(lA);
+  const A=SENS.A, B=SENS.B, C=SENS.C; const lA = A + C*logit(pAttemptBase) + B*(kid? (logit(pMean) - logit(pMakeLeague)) : 0); const pAttemptAdj = sigmoid(lA);
   // Overall chance to get 3 points
   const pOverall = pAttemptAdj * pMean;
   // Headline stats
   statMake.textContent = pct(pMean); statMakeCI.textContent = `(CI ${st.band}%: ${pct(pLo)}–${pct(pHi)})`; statAttemptBase.textContent = pct(pAttemptBase); statAttemptBaseCI.textContent = `(p10–p90: ${pct(pAttemptBase_lo)}–${pct(pAttemptBase_hi)})`; statAttemptAdj.textContent = pct(pAttemptAdj); statOverall.textContent = pct(pOverall);
-  const wShow = st.env==='indoor'?0:st.w; detailsEl.textContent = `Inputs: ${st.d} yd, ${st.env}, ${Math.round(st.t)}°F, wind ${Math.round(wShow)} mph · Score=${st.s}, Time=${st.tm}, YTG=${st.y} · ${base.mode}`;
-  drawChart(st.env, st.t, st.w, st.d, st);
+  const wShow = st.env==='indoor'?0:st.w; detailsEl.innerHTML = `Inputs: ${st.d} yd, ${st.env}, ${Math.round(st.t)}°F, wind ${Math.round(wShow)} mph · Score=${st.s}, Time=${st.tm}, YTG=${st.y} · ${base.mode} <span class=\"tag\">${st.team? `Team: ${st.team}${(TEAM_MAP.get(st.team)?.starter_kicker_id? ` (starter: ${(KMAP.get(TEAM_MAP.get(st.team).starter_kicker_id)?.kicker_name)||TEAM_MAP.get(st.team).starter_kicker_id})`:``)}`:'No team'}</span>`;
+  drawChart(st.env, st.t, st.w, st.d, {...st, kid});
+  // Diagnostics block
+  const bw = bandWeightsForDistance(st.d); const interp = base.meta||{}; const bandsTable = Object.entries(bw).map(([k,v])=>`${k}:${(v*100).toFixed(0)}%`).join(' · ');
+  const interpTxt = `T:${interp.t0}${interp.t1!==interp.t0?`→${interp.t1} (wt=${(interp.wt*100).toFixed(0)}%)`:''} · W:${interp.w0}${interp.w1!==interp.w0?`→${interp.w1} (ww=${(interp.ww*100).toFixed(0)}%)`:''}`;
+  const kidName = kid? (KMAP.get(kid)?.kicker_name||kid): '—';
+  diagBody.innerHTML = `
+    <div><strong>Make%</strong> base (league): ${pct(pMakeLeague)}; adjusted (${kidName}): ${pct(pMean)} (Δlogit advantage vs league = ${(kid? (logit(pMean)-logit(pMakeLeague)):0).toFixed(3)})</div>
+    <div><strong>Attempt%</strong> base: ${pct(pAttemptBase)}; adjusted (coupled): ${pct(pAttemptAdj)} — A=${A.toFixed(2)}, B=${B.toFixed(2)}, C=${C.toFixed(2)}</div>
+    <div>Band weights @ ${st.d}yd → ${bandsTable}</div>
+    <div>Interpolation: ${base.mode} · ${interpTxt}</div>
+    <div>CI scaling → ${st.band}% band</div>
+  `;
   // update URL (debounced)
   if (history.replaceState){ const s = encodeState(st); history.replaceState(null,'',`?${s}`); }
 }
 const recomputeDebounced = (()=>{ let t=null; return ()=>{ clearTimeout(t); t=setTimeout(recompute, 30); }; })();
 
-function drawChart(env, temp, wind, dSel, st){ const W=880,H=280,PAD=38; const xs=[], meanYs=[], loYs=[], hiYs=[], attYs=[]; for(let d=18; d<=68; d++){ const r = interpBilinearLogit(env, temp, wind, d); if(!r) continue; xs.push(d); meanYs.push(r.mean); loYs.push(r.lo); hiYs.push(r.hi); const kid = st.kid; if (kid){ const krec = KMAP.get(kid); const ks = kickerShiftForDistance(krec, d); meanYs[meanYs.length-1] = sigmoid(logit(meanYs[meanYs.length-1]) + ks.delta); loYs[loYs.length-1] = sigmoid(logit(loYs[loYs.length-1]) + ks.delta - (ks.se||0)); hiYs[hiYs.length-1] = sigmoid(logit(hiYs[hiYs.length-1]) + ks.delta + (ks.se||0)); }
+function drawChart(env, temp, wind, dSel, st){ const W=880,H=300,PAD=38; const xs=[], meanYs=[], loYs=[], hiYs=[], attYs=[]; for(let d=18; d<=68; d++){ const r = interpBilinearLogit(env, temp, wind, d); if(!r) continue; xs.push(d); let m=r.mean, lo=r.lo, hi=r.hi; const kid = st.kid; if (kid){ const krec = KMAP.get(kid); const ks = kickerShiftForDistance(krec, d); m=sigmoid(logit(m)+ks.delta); lo=sigmoid(logit(lo)+ks.delta-(ks.se||0)); hi=sigmoid(logit(hi)+ks.delta+(ks.se||0)); }
+    meanYs.push(m); loYs.push(lo); hiYs.push(hi);
     if (st.showAttempt){ const rA = lookupAttempt(env, st.s, st.tm, st.y, d); attYs.push(rA ? rA.prob_attempt_mean : 0); } }
   const xmin=18,xmax=68,ymin=0,ymax=1; const sx=x=>PAD+(x-xmin)/(xmax-xmin)*(W-2*PAD); const sy=y=>H-PAD-(y-ymin)/(ymax-ymin)*(H-2*PAD); const path=(xs,ys)=>xs.map((x,i)=>`${i?'L':'M'} ${sx(x).toFixed(1)} ${sy(ys[i]).toFixed(1)}`).join(' ');
   const meanPath=path(xs,meanYs), loPath=path(xs,loYs), hiPath=path(xs,hiYs); const bandPath = meanYs.length?(()=>{ const up=xs.map((x,i)=>`${i?'L':'M'} ${sx(x).toFixed(1)} ${sy(hiYs[i]).toFixed(1)}`).join(' '); const dn=xs.slice().reverse().map((x,i)=>`L ${sx(x).toFixed(1)} ${sy(loYs[loYs.length-1-i]).toFixed(1)}`).join(' '); return `${up} ${dn} Z`; })() : ""; const xd = sx(dSel);
@@ -388,31 +496,22 @@ function drawChart(env, temp, wind, dSel, st){ const W=880,H=280,PAD=38; const x
   if (st.showAttempt && attYs.length===xs.length){ attemptPath = path(xs,attYs); }
   const showAxes = toggleAxes.checked;
   chartEl.innerHTML = `
-    <rect x="0" y="0" width="${W}" height="${H}" fill="#0f141b"/>
-    <g stroke="${showAxes? '#1f2a38':'transparent'}" stroke-width="1" opacity="0.9">
-      ${ticksY.map(p=>`<line x1="${PAD}" x2="${W-PAD}" y1="${sy(p)}" y2="${sy(p)}"></line>`).join('')}
-      ${ticksX.map(x=>`<line x1="${sx(x)}" x2="${sx(x)}" y1="${PAD}" y2="${H-PAD}"></line>`).join('')}
-    </g>
-    ${showAxes? `<g fill="#a6c1da" font-size="10">
-      ${ticksY.map(p=>`<text x="${PAD-8}" y="${sy(p)+3}" text-anchor="end">${Math.round(p*100)}</text>`).join('')}
-      ${ticksX.map(x=>`<text x="${sx(x)}" y="${H-PAD+14}" text-anchor="middle">${x}</text>`).join('')}
-      <text x="${W/2}" y="${H-4}" text-anchor="middle">Distance (yd)</text>
-      <text transform="translate(12 ${H/2}) rotate(-90)" text-anchor="middle">Probability (%)</text>
-    </g>` : ''}
-    <path d="${bandPath}" fill="#3da9fc22" stroke="none"></path>
-    <path d="${meanPath}" fill="none" stroke="#3da9fc" stroke-width="2"></path>
-    <path d="${loPath}"   fill="none" stroke="#3da9fc55" stroke-width="1"></path>
-    <path d="${hiPath}"   fill="none" stroke="#3da9fc55" stroke-width="1"></path>
-    ${attemptPath? `<path d="${attemptPath}" fill="none" stroke="#7ae582" stroke-dasharray="5 4" stroke-width="1.6"></path>`: ''}
-    <line x1="${xd}" x2="${xd}" y1="${PAD}" y2="${H-PAD}" stroke="#ffcc66" stroke-width="2" stroke-dasharray="4 4"></line>`;
+    <rect x=\"0\" y=\"0\" width=\"${W}\" height=\"${H}\" fill=\"#0f141b\"/>
+    <g stroke=\"${showAxes? '#1f2a38':'transparent'}\" stroke-width=\"1\" opacity=\"0.9\">${ticksY.map(p=>`<line x1=\"${PAD}\" x2=\"${W-PAD}\" y1=\"${sy(p)}\" y2=\"${sy(p)}\"></line>`).join('')}${ticksX.map(x=>`<line x1=\"${sx(x)}\" x2=\"${sx(x)}\" y1=\"${PAD}\" y2=\"${H-PAD}\"></line>`).join('')}</g>
+    ${showAxes? `<g fill=\"#a6c1da\" font-size=\"10\">${ticksY.map(p=>`<text x=\"${PAD-8}\" y=\"${sy(p)+3}\" text-anchor=\"end\">${Math.round(p*100)}</text>`).join('')}${ticksX.map(x=>`<text x=\"${sx(x)}\" y=\"${H-PAD+14}\" text-anchor=\"middle\">${x}</text>`).join('')}<text x=\"${W/2}\" y=\"${H-4}\" text-anchor=\"middle\">Distance (yd)</text><text transform=\"translate(12 ${H/2}) rotate(-90)\" text-anchor=\"middle\">Probability (%)</text></g>` : ''}
+    <path d=\"${bandPath}\" fill=\"#3da9fc22\" stroke=\"none\"></path>
+    <path d=\"${meanPath}\" fill=\"none\" stroke=\"#3da9fc\" stroke-width=\"2\"></path>
+    <path d=\"${loPath}\"   fill=\"none\" stroke=\"#3da9fc55\" stroke-width=\"1\"></path>
+    <path d=\"${hiPath}\"   fill=\"none\" stroke=\"#3da9fc55\" stroke-width=\"1\"></path>
+    ${attemptPath? `<path d=\"${attemptPath}\" fill=\"none\" stroke=\"#7ae582\" stroke-dasharray=\"5 4\" stroke-width=\"1.6\"></path>`: ''}
+    <line x1=\"${xd}\" x2=\"${xd}\" y1=\"${PAD}\" y2=\"${H-PAD}\" stroke=\"#ffcc66\" stroke-width=\"2\" stroke-dasharray=\"4 4\"></line>`;
 }
 
-function csvDownload(){ const st=stateFromControls(); let rows=[["distance","make_mean","make_lo","make_hi","attempt_mean","attempt_lo","attempt_hi"]]; for(let d=18; d<=68; d++){ const base = interpBilinearLogit(st.env, st.t, st.w, d); if (!base) continue; let m=base.mean, lo=base.lo, hi=base.hi; if (st.kid){ const krec=KMAP.get(st.kid); const ks=kickerShiftForDistance(krec,d); m=sigmoid(logit(m)+ks.delta); lo=sigmoid(logit(lo)+ks.delta-(ks.se||0)); hi=sigmoid(logit(hi)+ks.delta+(ks.se||0)); }
+function csvDownload(){ const st=stateFromControls(); let rows=[["distance","make_mean","make_lo","make_hi","attempt_mean","attempt_lo","attempt_hi"]]; for(let d=18; d<=68; d++){ const base = interpBilinearLogit(st.env, st.t, st.w, d); if (!base) continue; let m=base.mean, lo=base.lo, hi=base.hi; const kid = st.useStarter && st.team && TEAM_MAP.get(st.team)?.starter_kicker_id ? TEAM_MAP.get(st.team).starter_kicker_id : (st.kid||''); if (kid){ const krec=KMAP.get(kid); const ks=kickerShiftForDistance(krec,d); m=sigmoid(logit(m)+ks.delta); lo=sigmoid(logit(lo)+ks.delta-(ks.se||0)); hi=sigmoid(logit(hi)+ks.delta+(ks.se||0)); }
   const rA = lookupAttempt(st.env, st.s, st.tm, st.y, d); const a=rA? rA.prob_attempt_mean:0, alo=rA? rA.prob_attempt_p10:0, ahi=rA? rA.prob_attempt_p90:0; rows.push([d,m,lo,hi,a,alo,ahi]); }
   const csv = rows.map(r=>r.join(',')).join('\n'); const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='fg_profile.csv'; a.click(); setTimeout(()=>URL.revokeObjectURL(url),500); }
 
-function pngDownload(){ // convert SVG to PNG
-  const svg = chartEl; const xml = new XMLSerializer().serializeToString(svg); const svg64 = 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(xml); const img = new Image(); img.onload = function(){ const W=svg.viewBox.baseVal.width || svg.clientWidth, H=svg.viewBox.baseVal.height || svg.clientHeight; const c=document.createElement('canvas'); c.width=W; c.height=H; const ctx=c.getContext('2d'); ctx.fillStyle='#0f141b'; ctx.fillRect(0,0,W,H); ctx.drawImage(img,0,0); c.toBlob(b=>{ const url=URL.createObjectURL(b); const a=document.createElement('a'); a.href=url; a.download='fg_profile.png'; a.click(); setTimeout(()=>URL.revokeObjectURL(url),500); },'image/png'); }; img.src=svg64; }
+function pngDownload(){ const svg = chartEl; const xml = new XMLSerializer().serializeToString(svg); const svg64 = 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(xml); const img = new Image(); img.onload = function(){ const W=svg.viewBox.baseVal.width || svg.clientWidth, H=svg.viewBox.baseVal.height || svg.clientHeight; const c=document.createElement('canvas'); c.width=W; c.height=H; const ctx=c.getContext('2d'); ctx.fillStyle='#0f141b'; ctx.fillRect(0,0,W,H); ctx.drawImage(img,0,0); c.toBlob(b=>{ const url=URL.createObjectURL(b); const a=document.createElement('a'); a.href=url; a.download='fg_profile.png'; a.click(); setTimeout(()=>URL.revokeObjectURL(url),500); },'image/png'); }; img.src=svg64; }
 
 function tryFetch(url){ return fetch(url).then(r=>{ if(!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }); }
 function readFileAsJSON(input){ return new Promise((res,rej)=>{ if(!input.files||!input.files[0]) return rej(new Error("No file")); const fr=new FileReader(); fr.onload=()=>{ try{res(JSON.parse(fr.result))}catch(e){rej(e)} }; fr.onerror=()=>rej(fr.error); fr.readAsText(input.files[0]); }); }
@@ -424,6 +523,7 @@ async function boot(){ // try to fetch colocated JSONs
     KICKERS = await tryFetch('./kicker_deltas_logit_banded.json');
     ATTEMPT = await tryFetch('./fg_attempt_grid_distance_env_context.json');
     SENS    = await tryFetch('./attempt_sensitivity.json');
+    try { ROSTER = await tryFetch('./nfl_kicker_roster.json'); } catch(_e){ ROSTER = null; }
     loadMsgEl.textContent = "Loaded via fetch.";
     afterLoad();
   }catch(e){
@@ -434,11 +534,12 @@ async function boot(){ // try to fetch colocated JSONs
       KICKERS = JSON.parse(document.getElementById('demo_kickers').textContent);
       ATTEMPT = JSON.parse(document.getElementById('demo_attempt').textContent);
       SENS = JSON.parse(document.getElementById('demo_sens').textContent);
-      loadMsgEl.innerHTML = `<span class="warn">Demo data loaded. Upload real JSONs or host alongside this file.</span>`;
+      ROSTER = JSON.parse(document.getElementById('demo_roster').textContent);
+      loadMsgEl.innerHTML = `<span class=\"warn\">Demo data loaded. Upload real JSONs or host alongside this file.</span>`;
       document.getElementById('fallbackUpload').style.display = "flex";
       afterLoad();
     }catch(err){
-      loadMsgEl.innerHTML = `<span class="warn">No data. Upload the four JSONs below or run a local server.</span>`;
+      loadMsgEl.innerHTML = `<span class=\"warn\">No data. Upload the JSONs below or run a local server.</span>`;
       document.getElementById('fallbackUpload').style.display = "flex";
     }
     btnUseUploads.onclick = async ()=>{
@@ -447,31 +548,40 @@ async function boot(){ // try to fetch colocated JSONs
         KICKERS = await readFileAsJSON(fileKickers);
         ATTEMPT = await readFileAsJSON(fileAttempt);
         SENS    = await readFileAsJSON(fileSens);
+        try{ ROSTER = await readFileAsJSON(fileRoster); }catch(_e){ ROSTER = null; }
         loadMsgEl.textContent = "Loaded via file uploads.";
         document.getElementById('fallbackUpload').style.display = "none";
         afterLoad();
       }catch(err){
-        loadMsgEl.innerHTML = `<span class="warn">Upload parse error: ${err.message}</span>`;
+        loadMsgEl.innerHTML = `<span class=\"warn\">Upload parse error: ${err.message}</span>`;
       }
     };
   }
 }
 
-function afterLoad(){ buildMakeIndex(); buildAttemptIndex(); populateKickers(); kickerSearch.value=''; filterKickers(''); attachEvents(); // from URL if present
-  const st = decodeState(location.search.slice(1)); controlsFromState(st); recompute(); }
+function afterLoad(){ buildMakeIndex(); buildAttemptIndex(); populateKickers(); populateTeams(); kickerSearch.value=''; filterKickers(''); attachEvents(); // from URL if present
+  const st = decodeState(location.search.slice(1)); controlsFromState(st); // If team set but no kicker, use starter
+  if((st.team||'') && (!st.kid || useStarter?.checked)){ const t=TEAM_MAP.get(st.team); if(t?.starter_kicker_id){ kickerSel.value=t.starter_kicker_id; }}
+  recompute(); }
 
-function filterKickers(q){ const opts=[...kickerSel.options]; const term=(q||'').toLowerCase(); opts.forEach((o,i)=>{ if(i===0) return; const t=o.textContent.toLowerCase(); o.hidden = !(t.includes(term)); }); }
+function filterKickers(q){ const term=(q||'').toLowerCase(); // filter visible options by text
+  [...kickerSel.options].forEach((o,i)=>{ if(i===0) return; o.hidden = !(o.textContent.toLowerCase().includes(term)); }); }
 
-function attachEvents(){ distance.addEventListener('input', ()=>{uiDist.value=distance.value; recomputeDebounced();}); uiDist.addEventListener('input', ()=>{distance.value=clamp(parseInt(uiDist.value,10)||61,18,68); recomputeDebounced();}); envSel.addEventListener('change', onEnvChange); tempInp.addEventListener('input', recomputeDebounced); windInp.addEventListener('input', recomputeDebounced); kickerSel.addEventListener('change', recomputeDebounced); bandSel.addEventListener('change', recomputeDebounced); scoreBin.addEventListener('change', recomputeDebounced); timeBin.addEventListener('change', recomputeDebounced); ytgBin.addEventListener('change', recomputeDebounced); toggleAttempt.addEventListener('change', recomputeDebounced); toggleAxes.addEventListener('change', recomputeDebounced);
+function attachEvents(){ distance.addEventListener('input', ()=>{uiDist.value=distance.value; recomputeDebounced();}); uiDist.addEventListener('input', ()=>{distance.value=clamp(parseInt(uiDist.value,10)||61,18,68); recomputeDebounced();}); envSel.addEventListener('change', onEnvChange); tempInp.addEventListener('input', recomputeDebounced); windInp.addEventListener('input', recomputeDebounced); bandSel.addEventListener('change', recomputeDebounced); scoreBin.addEventListener('change', recomputeDebounced); timeBin.addEventListener('change', recomputeDebounced); ytgBin.addEventListener('change', recomputeDebounced); toggleAttempt.addEventListener('change', recomputeDebounced); toggleAxes.addEventListener('change', recomputeDebounced);
   document.querySelectorAll('[data-preset-temp]').forEach(b=> b.addEventListener('click',()=>{ tempInp.value=b.getAttribute('data-preset-temp'); recompute(); })); document.querySelectorAll('[data-preset-wind]').forEach(b=> b.addEventListener('click',()=>{ windInp.value=b.getAttribute('data-preset-wind'); recompute(); }));
   kickerSearch.addEventListener('input', (e)=> filterKickers(e.target.value));
   btnCSV.addEventListener('click', ()=>{ csvDownload(); showToast('CSV downloaded'); }); btnPNG.addEventListener('click', ()=>{ pngDownload(); showToast('PNG downloaded'); });
-  btnReset.addEventListener('click', ()=>{ const def={d:61,env:'outdoor',t:65,w:5,kid:'',band:80,s:'close',tm:'late',y:'med', showAttempt:true, axes:true}; controlsFromState(def); recompute(); showToast('Reset'); });
+  btnReset.addEventListener('click', ()=>{ const def={d:61,env:'outdoor',t:65,w:5,team:'',useStarter:true,showInactive:false,kid:'',band:80,s:'close',tm:'late',y:'med', showAttempt:true, axes:true}; controlsFromState(def); recompute(); showToast('Reset'); });
   btnShare.addEventListener('click', ()=>{ const s=encodeState(stateFromControls()); navigator.clipboard?.writeText(location.origin+location.pathname+`?${s}`); showToast('Permalink copied'); });
   // keyboard nudges for distance
   uiDist.addEventListener('keydown', (e)=>{ if(e.key==='ArrowUp'||e.key==='ArrowDown'){ e.preventDefault(); const delta = (e.key==='ArrowUp'? 1 : -1); const v=clamp(parseInt(uiDist.value,10)||61,18,68)+delta; uiDist.value=v; distance.value=v; recomputeDebounced(); }});
   // Copy chart to clipboard (PNG) via keyboard
   chartEl.addEventListener('keydown', (e)=>{ const meta = e.ctrlKey||e.metaKey; if(meta && e.key.toLowerCase()==='c'){ e.preventDefault(); pngDownload(); }});
+  kickerSel.addEventListener('change', ()=>{ kickerStatus.textContent=statusString(); recomputeDebounced(); });
+  if(teamSel){ teamSel.addEventListener('change', ()=>{ refreshKickerOptions(); if(useStarter.checked){ kickerSel.disabled=true; kickerSearch.disabled=true; } else { kickerSel.disabled=false; kickerSearch.disabled=false; } recomputeDebounced(); }); }
+  if(useStarter){ useStarter.addEventListener('change', ()=>{ if(useStarter.checked){ kickerSel.disabled=true; kickerSearch.disabled=true; const st=stateFromControls(); const t=TEAM_MAP.get(st.team||''); if(t?.starter_kicker_id){ kickerSel.value=t.starter_kicker_id; } } else { kickerSel.disabled=false; kickerSearch.disabled=false; } kickerStatus.textContent=statusString(); recomputeDebounced(); }); }
+  if(showInactive){ showInactive.addEventListener('change', ()=>{ refreshKickerOptions(); recomputeDebounced(); }); }
+  if(btnCopyDiag){ btnCopyDiag.addEventListener('click', ()=>{ const txt=diagBody.innerText||diagBody.textContent; navigator.clipboard?.writeText(txt); showToast('Diagnostics copied'); }); }
 }
 
 boot();
