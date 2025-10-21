@@ -3,426 +3,638 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>NFL FG Probability — Coupled (Make × Attempt)</title>
+<title>NFL FG Probability — Coach Console</title>
+<meta name="color-scheme" content="dark light">
 <style>
-  :root { --bg:#0b0f14; --card:#121820; --muted:#9fb0c3; --acc:#3da9fc; }
-  * { box-sizing: border-box; }
-  body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial; background:var(--bg); color:#e6eef7; }
-  .wrap { max-width:1100px; margin:24px auto; padding:0 16px; }
-  .card { background:var(--card); border-radius:16px; padding:20px; box-shadow:0 10px 30px rgba(0,0,0,.25); margin-bottom:18px;}
-  h1 { margin:0 0 8px 0; font-size:26px; font-weight:700; }
-  h2 { margin:10px 0 12px 0; font-size:18px; color:var(--muted); }
-  .grid { display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
-  .row { display:flex; gap:10px; align-items:center; margin:8px 0; }
-  label { font-size:14px; color:var(--muted); min-width:160px; }
-  input[type="number"], select { background:#0f141b; color:#e6eef7; border:1px solid #263141; border-radius:8px; padding:8px 10px; width:100%; }
-  input[type="range"] { width:100%; }
-  .pill { display:inline-block; padding:4px 10px; border-radius:999px; font-size:12px; background:#0f141b; border:1px solid #263141; color:#9fb0c3; }
-  .out { font-size:18px; }
-  .muted { color:#9fb0c3; font-size:12px; }
-  .svgbox { width:100%; height:220px; background:#0f141b; border:1px solid #263141; border-radius:12px; }
-  .warn { color:#ffcc66; }
-  .uploader { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
-  .kmeta { font-size:12px; color:#9fb0c3; }
-  @media (max-width: 960px){ .grid{grid-template-columns:1fr;} label{min-width:140px;} }
+  :root{
+    --bg:#0b0f14; --surface:#0e141c; --card:#111925; --muted:#9fb0c3; --acc:#4aa8ff;
+    --ok:#2ecc71; --warn:#ffcc66; --err:#e74c3c; --ink:#e8f0fb; --border:#253343;
+  }
+  @media (prefers-color-scheme: light){
+    :root{ --bg:#f7f9fc; --surface:#f4f7fb; --card:#ffffff; --ink:#0c1a28; --border:#dbe6f2; --muted:#50657a; --acc:#1f7aff; }
+  }
+  *{ box-sizing:border-box }
+  html,body{ height:100% }
+  body{
+    margin:0; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, "Helvetica Neue", Arial;
+    color:var(--ink); background:linear-gradient(180deg,var(--bg),var(--surface));
+  }
+  .topbar{
+    position:sticky; top:0; z-index:20; backdrop-filter: blur(10px);
+    background: color-mix(in oklab, var(--surface) 85%, transparent);
+    border-bottom:1px solid var(--border);
+  }
+  .topwrap{ max-width:1200px; margin:0 auto; padding:14px 16px; display:flex; align-items:center; gap:14px }
+  .brand{
+    display:flex; align-items:center; gap:12px; font-weight:800; letter-spacing:.2px; font-size:18px;
+  }
+  .brand .badge{ width:28px; height:28px; border-radius:8px; display:grid; place-items:center;
+    background:radial-gradient(75% 75% at 25% 20%, #7cc2ff 0%, #4aa8ff 45%, #0a4ea6 100%); color:white; font-weight:900 }
+  .wrap{ max-width:1200px; margin:22px auto; padding:0 16px; }
+
+  .kpis{ display:grid; grid-template-columns: repeat(4,1fr); gap:14px; margin-bottom:16px }
+  .card{ background:var(--card); border:1px solid var(--border); border-radius:16px; padding:16px; box-shadow:0 12px 30px rgba(0,0,0,.15) }
+  .card h2{ margin:0 0 10px; font-size:16px; color:var(--muted); letter-spacing:.2px }
+  .kpi-num{ font-size:26px; font-weight:800 }
+  .kpi-sub{ color:var(--muted); font-size:12px }
+
+  .layout{ display:grid; grid-template-columns: 380px 1fr; gap:16px }
+  @media (max-width: 1000px){ .layout{ grid-template-columns:1fr } .kpis{ grid-template-columns: repeat(2,1fr) } }
+  @media (max-width: 580px){ .kpis{ grid-template-columns: 1fr } }
+
+  label{ font-size:12px; color:var(--muted) }
+  input[type="number"],select,.textlike{
+    width:100%; background:color-mix(in oklab, var(--surface) 60%, #000 0%);
+    color:var(--ink); border:1px solid var(--border); border-radius:10px; padding:9px 10px;
+  }
+  input[type="range"]{ width:100% }
+  .row{ display:grid; grid-template-columns: 1fr 120px; gap:10px; align-items:center; margin:8px 0 }
+  .row-3{ display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; align-items:center; margin:8px 0 }
+  .muted{ color:var(--muted); font-size:12px }
+  .pill{ font-size:12px; border:1px solid var(--border); border-radius:999px; padding:3px 8px; color:var(--muted) }
+
+  .toolbar{ display:flex; gap:8px; flex-wrap:wrap; align-items:center }
+  .btn{
+    appearance:none; border:1px solid var(--border); background:color-mix(in oklab, var(--surface) 60%, #000 0%);
+    color:var(--ink); padding:8px 12px; border-radius:10px; font-weight:600; cursor:pointer
+  }
+  .btn.acc{ border-color:color-mix(in oklab, var(--acc), var(--border)); background:color-mix(in oklab, var(--acc) 14%, var(--surface)); }
+  .btn:disabled{ opacity:.5; cursor:not-allowed }
+
+  .chart{ width:100%; height:280px; border:1px solid var(--border); border-radius:14px; background:color-mix(in oklab, var(--surface) 50%, #000 0%) }
+
+  .flex{ display:flex; gap:12px; flex-wrap:wrap }
+  .grow{ flex:1 1 auto }
+
+  table{ width:100%; border-collapse: collapse; font-size:13px }
+  th,td{ padding:8px 10px; border-bottom:1px solid var(--border) }
+  th{ color:var(--muted); font-weight:700; text-align:left; letter-spacing:.2px }
+  tr:hover td{ background:color-mix(in oklab, var(--surface) 25%, transparent) }
+
+  .ok{ color:var(--ok) } .warn{ color:var(--warn) } .err{ color:var(--err) }
+  details{ border:1px dashed var(--border); border-radius:12px; padding:10px 12px }
+  summary{ cursor:pointer; color:var(--muted); font-weight:700 }
+  .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:14px }
+  @media (max-width:800px){ .grid-2{ grid-template-columns:1fr } }
+
+  .tag{ display:inline-block; padding:2px 6px; border-radius:6px; border:1px solid var(--border); color:var(--muted); font-size:11px }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="card">
-    <h1>Field Goal Probability — Coupled (Coach View)</h1>
-    <div class="muted">
-      Make model: LGBM (monotone distance) · bagged · isotonic · bilinear (Temp×Wind).<br/>
-      Kicker: recency-weighted Bayesian deltas by distance band (weaker prior at 60+).<br/>
-      Attempt model: league context grid + <em>coupling</em> so Attempt% rises with kicker’s make% advantage.
-    </div>
-    <div id="loadMsg" class="muted"></div>
-    <div class="uploader" id="fallbackUpload" style="display:none">
-      <div><label class="pill">Load make grid</label><input type="file" id="fileGrid" accept=".json"/></div>
-      <div><label class="pill">Load kicker banded JSON</label><input type="file" id="fileKickers" accept=".json"/></div>
-      <div><label class="pill">Load attempt grid</label><input type="file" id="fileAttempt" accept=".json"/></div>
-      <div><label class="pill">Load attempt sensitivity</label><input type="file" id="fileSens" accept=".json"/></div>
-      <button id="btnUseUploads">Use uploaded files</button>
+<header class="topbar">
+  <div class="topwrap">
+    <div class="brand"><div class="badge">FG</div> NFL Field Goal Probability — <span style="font-weight:600">Coach Console</span></div>
+    <div class="grow"></div>
+    <div class="toolbar">
+      <button class="btn" id="btnShare">Copy Share Link</button>
+      <button class="btn" id="btnPNG" title="Download chart as PNG">Download Chart</button>
+      <a class="btn acc" href="https://github.com/aaronwolk00/kicker_probs" target="_blank" rel="noreferrer">GitHub</a>
     </div>
   </div>
+</header>
 
-  <div class="card">
-    <h2>Inputs</h2>
-    <div class="grid">
-      <div>
-        <div class="row">
-          <label>Distance (yards)</label>
-          <input id="distance" type="range" min="18" max="68" step="1" value="61" oninput="uiDist.value=value; recompute()"/>
-          <input id="uiDist" type="number" min="18" max="68" step="1" value="61" oninput="distance.value=value; recompute()"/>
-        </div>
-        <div class="row">
-          <label>Environment</label>
-          <select id="env" onchange="onEnvChange()">
-            <option value="indoor">Indoor</option>
-            <option value="outdoor" selected>Outdoor</option>
-          </select>
-          <span class="pill">Roof “outdoors” → Outdoor; else Indoor</span>
-        </div>
-        <div class="row">
-          <label>Temperature (°F)</label>
-          <input id="temp" type="number" value="65" step="1" oninput="recompute()"/>
-          <span class="pill">Bilinear (Temp×Wind)</span>
-        </div>
-        <div class="row">
-          <label>Wind (mph)</label>
-          <input id="wind" type="number" value="5" step="1" oninput="recompute()"/>
-          <span class="pill">Indoor forces 0</span>
+<main class="wrap">
+  <!-- KPIs -->
+  <section class="kpis">
+    <div class="card">
+      <h2>Make Probability</h2>
+      <div class="kpi-num" id="kpiMake">—</div>
+      <div class="kpi-sub" id="kpiBand">—</div>
+    </div>
+    <div class="card">
+      <h2>Vs League Baseline</h2>
+      <div class="kpi-num" id="kpiEdge">—</div>
+      <div class="kpi-sub">Delta at current conditions</div>
+    </div>
+    <div class="card">
+      <h2>Attempt Likelihood</h2>
+      <div class="kpi-num" id="kpiAttempt">—</div>
+      <div class="kpi-sub" id="kpiAttemptMeta">Team/Context propensity</div>
+    </div>
+    <div class="card">
+      <h2>Confidence</h2>
+      <div class="kpi-num" id="kpiConf">80% band</div>
+      <div class="kpi-sub"><span class="tag" id="metaBags">bags: —</span> <span class="tag" id="metaGrid">grid: —</span></div>
+    </div>
+  </section>
+
+  <section class="layout">
+    <!-- Controls -->
+    <div class="card">
+      <h2>Scenario Inputs</h2>
+      <div class="row">
+        <label>Line of Scrimmage (yard line)</label>
+        <div class="flex">
+          <input id="los" type="number" min="1" max="50" value="28" oninput="syncFromLOS()" class="grow" />
+          <div class="pill">distance ≈ LOS + 17</div>
         </div>
       </div>
-
-      <div>
-        <div class="row">
-          <label>Kicker</label>
-          <select id="kicker" onchange="recompute()">
-            <option value="">— none —</option>
-          </select>
+      <div class="row">
+        <label>Kick Distance (yards)</label>
+        <div class="flex">
+          <input id="distance" type="range" min="18" max="68" step="1" value="45" oninput="uiDist.value=value; syncFromDist()"/>
+          <input id="uiDist" type="number" min="18" max="68" step="1" value="45" oninput="distance.value=value; syncFromDist()" style="width:96px"/>
         </div>
-        <div class="row">
-          <label>Context: Score</label>
-          <select id="scoreBin" onchange="recompute()">
-            <option value="trail">Trailing (≤ −3)</option>
-            <option value="close" selected>Close (−2..+2)</option>
-            <option value="lead">Leading (≥ +3)</option>
-          </select>
+      </div>
+      <div class="row">
+        <label>Environment</label>
+        <select id="env" onchange="onEnvChange()">
+          <option value="indoor">Indoor</option>
+          <option value="outdoor">Outdoor</option>
+        </select>
+      </div>
+      <div class="row-3">
+        <div>
+          <label>Temperature (°F)</label>
+          <input id="temp" type="number" value="70" step="1" oninput="recompute()"/>
         </div>
-        <div class="row">
-          <label>Context: Time (half)</label>
-          <select id="timeBin" onchange="recompute()">
-            <option value="early">Early (≈20:00)</option>
-            <option value="mid">Mid (≈10:00)</option>
-            <option value="late" selected>Late (≈2:00)</option>
-          </select>
+        <div>
+          <label>Wind (mph)</label>
+          <input id="wind" type="number" value="0" step="1" oninput="recompute()"/>
         </div>
-        <div class="row">
-          <label>Context: Yards to go</label>
-          <select id="ytgBin" onchange="recompute()">
-            <option value="short">Short (≤2)</option>
-            <option value="med" selected>Medium (3–6)</option>
-            <option value="long">Long (≥7)</option>
-          </select>
-        </div>
-        <div class="row">
+        <div>
           <label>Confidence band</label>
           <select id="band" onchange="recompute()">
-            <option value="80" selected>80% (p10–p90)</option>
-            <option value="68">~68%</option>
-            <option value="90">90%</option>
+            <option value="80">80% (p10–p90)</option>
+            <option value="68">~68% (approx)</option>
+            <option value="90">90% (approx)</option>
           </select>
         </div>
       </div>
+      <div class="row">
+        <label>Kicker</label>
+        <select id="kicker" onchange="recompute()">
+          <option value="">— none —</option>
+        </select>
+      </div>
+      <div class="row-3">
+        <div>
+          <label>Recency Emphasis</label>
+          <input id="recency" type="range" min="0" max="1" step="0.05" value="1" oninput="recompute()">
+          <div class="muted">0 = career; 1 = recency-weighted</div>
+        </div>
+        <div>
+          <label>Show League Avg</label>
+          <select id="showAvg" onchange="recompute()">
+            <option value="yes">Yes</option>
+            <option value="no" selected>No</option>
+          </select>
+        </div>
+        <div>
+          <label>Model Meta</label>
+          <div class="textlike" id="meta">—</div>
+        </div>
+      </div>
     </div>
-    <div id="kmeta" class="kmeta"></div>
-  </div>
 
-  <div class="card">
-    <h2>Coach Readout</h2>
-    <div id="result" class="out">—</div>
-    <div id="details" class="muted">—</div>
-  </div>
+    <!-- Charts / Rankings -->
+    <div class="card">
+      <h2>Probability Curve (current conditions)</h2>
+      <svg id="chart" class="chart" viewBox="0 0 900 280" preserveAspectRatio="none" role="img" aria-label="Make probability by distance"></svg>
+      <div class="flex" style="margin-top:10px; gap:10px">
+        <div class="muted grow" id="details">—</div>
+        <div class="muted" id="kickerMeta">—</div>
+      </div>
+    </div>
+  </section>
 
-  <div class="card">
-    <h2>Distance Profile (Make% | Attempt)</h2>
-    <svg id="chart" class="svgbox" viewBox="0 0 800 220" preserveAspectRatio="none"></svg>
-    <div class="muted">Curve = Make% (bilinear, with kicker banded shift). Shaded = CI. Attempt% is shown in the readout (context- and kicker-adjusted).</div>
-  </div>
-</div>
+  <section class="grid-2" style="margin-top:16px">
+    <div class="card">
+      <h2>Top Kickers at Current Conditions</h2>
+      <div class="flex" style="margin-bottom:8px">
+        <input id="filterName" placeholder="Filter by name…" class="grow" oninput="renderTable()"/>
+        <button class="btn" onclick="downloadCSV()">Export CSV</button>
+      </div>
+      <table id="tbl">
+        <thead><tr>
+          <th>Kicker</th><th>EffAtt</th><th>Recency</th><th>Δlogit</th><th>Make%</th><th>Edge%</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="muted" style="margin-top:6px">Make% includes kicker logit shift; Edge% is vs league baseline at same scenario.</div>
+    </div>
+
+    <div class="card">
+      <h2>Diagnostics</h2>
+      <details open>
+        <summary>Artifacts & Status</summary>
+        <table id="diag" style="margin-top:8px">
+          <thead><tr><th>Artifact</th><th>Filenames</th><th>Status</th></tr></thead>
+          <tbody id="diagBody"></tbody>
+        </table>
+      </details>
+      <details style="margin-top:10px">
+        <summary>Manual Upload (fallback)</summary>
+        <div class="flex" style="margin-top:10px; gap:8px; flex-wrap:wrap">
+          <div><label class="pill">Grid</label><input type="file" id="fileGrid" accept=".json"/></div>
+          <div><label class="pill">Kickers</label><input type="file" id="fileKickers" accept=".json"/></div>
+          <div><label class="pill">Attempt Grid</label><input type="file" id="fileAttempt" accept=".json"/></div>
+          <div><label class="pill">Attempt Sens</label><input type="file" id="fileSens" accept=".json"/></div>
+          <button class="btn acc" id="btnUseUploads">Use uploads</button>
+        </div>
+      </details>
+      <div class="muted" id="loadMsg" style="margin-top:10px">Loading…</div>
+    </div>
+  </section>
+
+  <section class="card" style="margin-top:16px">
+    <h2>Notes</h2>
+    <ul class="muted">
+      <li>Model: Bagged LightGBM (monotone on distance) + isotonic calibration; bilinear interpolation (Temp×Wind) in logit space.</li>
+      <li>Kicker effect: constant logit shift; recency slider blends career vs recency-weighted deltas (if provided).</li>
+      <li>Wind is forced to 0 indoors. Distance monotonicity is enforced (e.g., 60 ≤ 55 ceteris paribus).</li>
+      <li>Attempt Likelihood appears when an attempt grid is supplied; else shows “—”.</li>
+    </ul>
+  </section>
+</main>
 
 <script>
-let GRID=null, KICKERS=[], ATTEMPT=null, SENS=null;
-let gridIndex=new Map(), attemptIndex=new Map(), KMAP=new Map();
-let temps=[], winds=[];
+/* ---------- Filenames (with fallbacks) ---------- */
+const FILES = {
+  grid: ["./fg_prob_grid_distance_env_temp_wind.json?v=2"],
+  kickers: ["./kicker_deltas_logit_banded.json?v=2","./kicker_deltas_logit.json?v=2"],
+  attemptGrid: ["./fg_attempt_grid_distance_env_context.json?v=2","./fg_attempt_grid.json?v=2"],
+  attemptSens: ["./attempt_sensitivity.json?v=2"]
+};
 
-const distance  = document.getElementById('distance');
-const uiDist    = document.getElementById('uiDist');
-const envSel    = document.getElementById('env');
-const tempInp   = document.getElementById('temp');
-const windInp   = document.getElementById('wind');
-const kickerSel = document.getElementById('kicker');
-const bandSel   = document.getElementById('band');
-const scoreBin  = document.getElementById('scoreBin');
-const timeBin   = document.getElementById('timeBin');
-const ytgBin    = document.getElementById('ytgBin');
-const loadMsgEl = document.getElementById('loadMsg');
-const kmetaEl   = document.getElementById('kmeta');
-const resultEl  = document.getElementById('result');
-const detailsEl = document.getElementById('details');
-const chartEl   = document.getElementById('chart');
+/* ---------- State ---------- */
+let GRID=null, KICKERS=[], ATTEMPT_GRID=null, ATTEMPT_SENS=null;
+let gridIndex=new Map(), temps=[], winds=[];
+const el = (id)=>document.getElementById(id);
 
-const upWrap       = document.getElementById('fallbackUpload');
-const fileGrid     = document.getElementById('fileGrid');
-const fileKickers  = document.getElementById('fileKickers');
-const fileAttempt  = document.getElementById('fileAttempt');
-const fileSens     = document.getElementById('fileSens');
-const btnUseUploads= document.getElementById('btnUseUploads');
+/* ---------- Elements ---------- */
+const eDistance=el('distance'), eUiDist=el('uiDist'), eLOS=el('los'), eEnv=el('env'), eTemp=el('temp'),
+      eWind=el('wind'), eBand=el('band'), eKicker=el('kicker'), eRec=el('recency'),
+      eChart=el('chart'), eDetails=el('details'), eKMeta=el('kickerMeta'), eMeta=el('meta'),
+      eMake=el('kpiMake'), eBandKPI=el('kpiBand'), eEdge=el('kpiEdge'), eAttempt=el('kpiAttempt'),
+      eAttemptMeta=el('kpiAttemptMeta'), eMetaBags=el('metaBags'), eMetaGrid=el('metaGrid'),
+      eShowAvg=el('showAvg'), eTbl=el('tbl').querySelector('tbody'),
+      eDiagBody=el('diagBody'), eLoadMsg=el('loadMsg'), eFilter=el('filterName');
 
-function onEnvChange(){
-  if (envSel.value === 'indoor'){ windInp.value = 0; windInp.disabled = true; }
-  else { windInp.disabled = false; }
-  recompute();
+/* ---------- Utilities ---------- */
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const logit=(p)=>{p=Math.min(Math.max(p,1e-9),1-1e-9);return Math.log(p/(1-p));};
+const sigmoid=(x)=>1/(1+Math.exp(-x));
+const pct=(x)=> (x*100).toFixed(1)+"%";
+const fmt=(x,n=3)=> (Math.abs(x)>=1? x.toFixed(2): x.toFixed(n));
+
+function addDiagRow(name,tried,status,ok){
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td>${name}</td><td style="font-size:12px;color:var(--muted)">${tried.join(" | ")}</td><td>${ ok?'<span class="ok">Loaded</span>':`<span class="err">${status}</span>`}</td>`;
+  eDiagBody.appendChild(tr);
 }
-
-function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
-function logit(p){ p = Math.min(Math.max(p,1e-9), 1-1e-9); return Math.log(p/(1-p)); }
-function sigmoid(x){ return 1/(1+Math.exp(-x)); }
-function pct(x){ return (x*100).toFixed(1) + "%"; }
-
-function buildMakeIndex(){
-  gridIndex.clear();
-  temps = GRID.meta.temps.slice();
-  winds = GRID.meta.winds.slice();
-  for(const r of GRID.grid){
-    gridIndex.set(`${r.indoor_outdoor}|${r.temp_F}|${r.wind_mph}|${r.distance}`, r);
+async function tryFetchOneOf(names){
+  let last=null;
+  for(const url of names){
+    try{ const r=await fetch(url,{cache:"no-store"}); if(!r.ok) throw new Error("HTTP "+r.status);
+      return {ok:true,data:await r.json(), tried:names, status:"OK "+url}; }catch(e){ last=e; }
   }
+  return {ok:false,data:null,tried:names,status:last?last.message:"Error"};
 }
-function buildAttemptIndex(){
-  attemptIndex.clear();
-  for(const r of ATTEMPT.grid){
-    attemptIndex.set(`${r.indoor_outdoor}|${r.score_bin}|${r.time_bin}|${r.ytg_bin}|${r.distance}`, r);
-  }
-}
-function populateKickers(){
-  KMAP.clear();
-  kickerSel.innerHTML = `<option value="">— none —</option>`;
-  const frag = document.createDocumentFragment();
-  const sorted = [...KICKERS].sort((a,b)=> (b.attempts_eff||0) - (a.attempts_eff||0));
-  for(const k of sorted){
-    const opt = document.createElement('option');
-    opt.value = k.kicker_id;
-    opt.textContent = `${k.kicker_name || k.kicker_id} (effAtt=${(k.attempts_eff||0).toFixed(1)})`;
-    frag.appendChild(opt);
-    KMAP.set(k.kicker_id, k);
-  }
-  kickerSel.appendChild(frag);
+function readFileAsJSON(input){
+  return new Promise((res,rej)=>{
+    if(!input.files||!input.files[0]) return rej(new Error("No file"));
+    const fr=new FileReader();
+    fr.onload=()=>{ try{res(JSON.parse(fr.result));}catch(e){rej(e);} };
+    fr.onerror=()=>rej(fr.error);
+    fr.readAsText(input.files[0]);
+  });
 }
 
+/* ---------- Build index & interpolation ---------- */
+function buildIndex(){
+  gridIndex.clear(); temps=GRID.meta.temps.slice(); winds=GRID.meta.winds.slice();
+  for(const r of GRID.grid){ gridIndex.set(`${r.indoor_outdoor}|${r.temp_F}|${r.wind_mph}|${r.distance}`, r); }
+  eMeta.textContent = `bags=${GRID.meta.n_bags}, temp=${temps[0]}–${temps.at(-1)}°F, wind=${winds[0]}–${winds.at(-1)} mph`;
+  eMetaBags.textContent = `bags: ${GRID.meta.n_bags}`;
+  eMetaGrid.textContent = `grid: T=${temps.length} × W=${winds.length} × D`;
+}
 function neighbors(val, arr){
-  if (val <= arr[0]) return [arr[0], arr[0]];
-  if (val >= arr[arr.length-1]) return [arr[arr.length-1], arr[arr.length-1]];
-  for (let i=0; i<arr.length-1; i++){
-    if (val >= arr[i] && val <= arr[i+1]) return [arr[i], arr[i+1]];
-  }
-  return [arr[0], arr[0]];
+  if(val<=arr[0]) return [arr[0],arr[0]];
+  if(val>=arr.at(-1)) return [arr.at(-1),arr.at(-1)];
+  for(let i=0;i<arr.length-1;i++){ if(val>=arr[i] && val<=arr[i+1]) return [arr[i],arr[i+1]]; }
+  return [arr[0],arr[0]];
 }
-function nearest(val, arr){
-  let best = arr[0], bd = Math.abs(val-arr[0]);
-  for(const x of arr){ const d = Math.abs(val-x); if (d<bd){ bd=d; best=x; } }
-  return best;
-}
-function lookupMake(env, temp, wind, dist){
-  return gridIndex.get(`${env}|${temp}|${wind}|${dist}`) || null;
-}
-function interpBilinearLogit(env, temp, wind, dist){
-  if (env === 'indoor') wind = 0;
-  const [t0,t1]=neighbors(temp, temps), [w0,w1]=neighbors(wind, winds);
+function lookupCell(env,temp,wind,dist){ return gridIndex.get(`${env}|${temp}|${wind}|${dist}`) || null; }
+function interpBilinearLogit(env,temp,wind,dist){
+  if(env==='indoor') wind=0;
+  const [t0,t1]=neighbors(temp,temps), [w0,w1]=neighbors(wind,winds);
   const sameT=(t0===t1), sameW=(w0===w1);
-  const r00=lookupMake(env,t0,w0,dist), r10=lookupMake(env,t1,w0,dist),
-        r01=lookupMake(env,t0,w1,dist), r11=lookupMake(env,t1,w1,dist);
-  if (!r00 || (!sameT && !r10) || (!sameW && !r01) || (!sameT && !sameW && !r11)){
-    const tN=nearest(temp,temps), wN=(env==='indoor'?0:nearest(wind,winds));
-    const r=lookupMake(env,tN,wN,dist);
-    if (!r) return null;
-    return {mean:r.prob_mean, lo:r.prob_p10, hi:r.prob_p90, baseMean:r.prob_mean, mode:"nearest"};
-  }
+  const r00=lookupCell(env,t0,w0,dist), r10=lookupCell(env,t1,w0,dist), r01=lookupCell(env,t0,w1,dist), r11=lookupCell(env,t1,w1,dist);
+  if(!r00 || (!sameT && !r10) || (!sameW && !r01) || (!sameT && !sameW && !r11)) return null;
+  const wt= sameT?0:(temp-t0)/(t1-t0), ww= sameW?0:(wind-w0)/(w1-w0);
   function blend(field){
-    const L00=logit(r00[field]), L10=sameT?L00:logit(r10[field]);
-    const L01=sameW?L00:logit(r01[field]), L11=(sameT&&sameW)?L00:logit(r11[field]);
-    const wt=sameT?0:(temp-t0)/(t1-t0), ww=sameW?0:(wind-w0)/(w1-w0);
+    const L00=logit(r00[field]);
+    const L10=sameT?L00:logit(r10[field]);
+    const L01=sameW?L00:logit(r01[field]);
+    const L11=(sameT&&sameW)?L00:logit(r11[field]);
     const L0=L00*(1-wt)+L10*wt, L1=L01*(1-wt)+L11*wt;
     return sigmoid(L0*(1-ww)+L1*ww);
   }
-  return {mean:blend("prob_mean"), lo:blend("prob_p10"), hi:blend("prob_p90"),
-          baseMean:blend("prob_mean"), mode:"bilinear"};
+  return {mean:blend("prob_mean"), lo:blend("prob_p10"), hi:blend("prob_p90")};
 }
+function ciScale(b){ if(b===80) return 1; if(b===68) return 0.68/0.80; if(b===90) return 0.90/0.80; return 1; }
 
-// kicker band blending
-const BAND_BOUNDS = { short:39, mid:49, long:59 };
-const BLEND_W = 2;
-function bandWeightsForDistance(d){
-  if (d <= BAND_BOUNDS.short - BLEND_W) return {short:1};
-  if (d <  BAND_BOUNDS.short + BLEND_W){ const t=(d-(BAND_BOUNDS.short-BLEND_W))/(2*BLEND_W); return {short:1-t, mid:t}; }
-  if (d <= BAND_BOUNDS.mid - BLEND_W) return {mid:1};
-  if (d <  BAND_BOUNDS.mid + BLEND_W){ const t=(d-(BAND_BOUNDS.mid-BLEND_W))/(2*BLEND_W); return {mid:1-t, long:t}; }
-  if (d <= BAND_BOUNDS.long - BLEND_W) return {long:1};
-  if (d <  BAND_BOUNDS.long + BLEND_W){ const t=(d-(BAND_BOUNDS.long-BLEND_W))/(2*BLEND_W); return {long:1-t, xlong:t}; }
-  return {xlong:1};
-}
-function kickerShiftForDistance(krec, d){
-  if (!krec || !krec.bands) return {delta:0, se:0};
-  const w=bandWeightsForDistance(d); let delta=0, var_sum=0, wsum=0;
-  for (const band of Object.keys(w)){
-    const ww=w[band], b=krec.bands[band];
-    if (!b) continue;
-    const dlt=(typeof b.delta_logit==="number")?b.delta_logit:0;
-    const se=(typeof b.se==="number")?b.se:0;
-    delta += ww*dlt; var_sum += (ww*ww)*(se*se); wsum += ww;
+/* ---------- Kicker UI ---------- */
+function kickerOptions(){
+  const frag=document.createDocumentFragment();
+  const sorted=[...KICKERS].sort((a,b)=> (b.recency_score??0)-(a.recency_score??0) || (b.eff_attempts??0)-(a.eff_attempts??0));
+  for(const k of sorted){
+    const opt=document.createElement('option');
+    const tag = (k.eff_attempts!=null)? ` (${k.eff_attempts})`:'';
+    opt.value=k.kicker_id; opt.textContent=`${k.kicker_name||k.kicker_id}${tag}`;
+    frag.appendChild(opt);
   }
-  if (wsum<=0) return {delta:0,se:0};
-  return {delta, se:Math.sqrt(var_sum)};
+  eKicker.appendChild(frag);
+}
+function kickerDelta(recencyBlend, krec){
+  // Prefer banded/recency delta if present; blend with career delta when slider < 1
+  const hasBand = (krec.band_delta!=null);
+  const band = krec.band_delta ?? krec.delta_logit ?? 0;
+  const career = krec.delta_logit ?? band;
+  return career*(1-recencyBlend) + band*(recencyBlend);
 }
 
-function ciScale(band){
-  if (band===80) return 1.0;
-  if (band===68) return 0.68/0.80;
-  if (band===90) return 0.90/0.80;
-  return 1.0;
+/* ---------- LOS/Distance sync ---------- */
+function syncFromLOS(){
+  const los = clamp(parseInt(eLOS.value||0,10),1,50);
+  const dist = clamp(los + 17, 18, 68);
+  eLOS.value = los; eDistance.value = dist; eUiDist.value=dist;
+  recompute();
+}
+function syncFromDist(){
+  const d = clamp(parseInt(eDistance.value,10),18,68);
+  eUiDist.value=d; eLOS.value = clamp(d-17,1,50);
+  recompute();
+}
+function onEnvChange(){
+  if(eEnv.value==='indoor'){ eWind.value=0; eWind.disabled=true; } else { eWind.disabled=false; }
+  recompute();
 }
 
-function lookupAttempt(env, sBin, tBin, yBin, dist){
-  return attemptIndex.get(`${env}|${sBin}|${tBin}|${yBin}|${dist}`) || null;
+/* ---------- Core recompute ---------- */
+function scenario(){
+  return {
+    dist: clamp(parseInt(eDistance.value,10),18,68),
+    env: eEnv.value,
+    temp: parseFloat(eTemp.value),
+    wind: parseFloat(eWind.value) || 0,
+    band: parseInt(eBand.value,10),
+    kid: eKicker.value || null,
+    rec: parseFloat(eRec.value)
+  };
+}
+function basePoint(sc){
+  const r = interpBilinearLogit(sc.env, sc.temp, sc.wind, sc.dist);
+  if(!r) return null;
+  return {...r};
+}
+function applyKickerShift(p, krec, recBlend){
+  const d = kickerDelta(recBlend, krec);
+  const se = krec.se ?? 0;
+  let m = sigmoid(logit(p.mean) + d);
+  let lo = sigmoid(logit(p.lo) + d - se);
+  let hi = sigmoid(logit(p.hi) + d + se);
+  return {mean:m, lo, hi, delta:d, se};
+}
+function adjustBand(p, band){
+  const scale=ciScale(band);
+  const Lm=logit(p.mean), Llo=logit(p.lo), Lhi=logit(p.hi);
+  const half=(Lhi-Llo)/2;
+  return {mean:p.mean, lo:sigmoid(Lm - half*scale), hi:sigmoid(Lm + half*scale)};
 }
 
-function recompute(){
-  if (!GRID || !ATTEMPT || !SENS) return;
+/* Attempt probability (optional artifact) */
+function attemptProb(sc){
+  if(!ATTEMPT_GRID) return null;
+  // same bilinear interpolation but fields attempt_mean/p10/p90 or prob_mean if named that way
+  const [t0,t1]=neighbors(sc.temp,temps), [w0,w1]=neighbors(sc.wind, winds);
+  const key=(env,temp,wind,dist)=>`${env}|${temp}|${wind}|${dist}`;
+  const idx=(env,temp,wind,dist)=> ATTEMPT_GRID.grid_index?.[key(env,temp,wind,dist)] ?? null;
 
-  const d = clamp(parseInt(distance.value,10), 18, 68); uiDist.value = d;
-  const env  = envSel.value;
-  const temp = parseFloat(tempInp.value);
-  const wind = parseFloat(windInp.value) || 0;
-  const band = parseInt(bandSel.value,10);
-
-  // Base league make (no kicker)
-  const base = interpBilinearLogit(env, temp, wind, d);
-  if (!base){ resultEl.textContent="No data"; detailsEl.textContent=""; kmetaEl.textContent=""; drawChart(env,temp,wind,d); return; }
-  let pMakeLeague = base.baseMean; // before kicker
-  let pMean = base.mean, pLo = base.lo, pHi = base.hi;
-
-  // Kicker adjust in logit space
-  const kid = kickerSel.value;
-  let kmeta = "", delta=0, se=0;
-  if (kid){
-    const krec = KMAP.get(kid);
-    const ks = kickerShiftForDistance(krec, d);
-    delta = ks.delta; se = ks.se||0;
-    pMean = sigmoid(logit(pMean) + delta);
-    pLo   = sigmoid(logit(pLo)   + delta);
-    pHi   = sigmoid(logit(pHi)   + delta);
-    if (se>0){ pLo = sigmoid(logit(pLo)-se); pHi = sigmoid(logit(pHi)+se); }
-    const bands = Object.keys(krec?.bands||{}).join(", ");
-    kmeta = `Kicker: ${krec?.kicker_name || kid} · effAtt=${(krec?.attempts_eff||0).toFixed(1)} · bands=[${bands}] · Δlogit(d)=${delta.toFixed(3)}`;
+  // Build a local lookup using GRID index if ATTEMPT_GRID has similar structure:
+  function lookup(env,temp,wind,dist){
+    const k=`${env}|${temp}|${wind}|${dist}`;
+    return (ATTEMPT_GRID.grid_map && ATTEMPT_GRID.grid_map[k]) || ATTEMPT_GRID.grid?.find(r => r.indoor_outdoor===env && r.temp_F===temp && r.wind_mph===wind && r.distance===dist) || null;
   }
-  kmetaEl.textContent = kmeta;
-
-  // Rescale CI to selected band
-  const lmean = logit(pMean), scale = ciScale(band);
-  let llo = logit(pLo), lhi = logit(pHi), half=(lhi-llo)/2;
-  llo = lmean - half*scale; lhi = lmean + half*scale;
-  pLo = sigmoid(llo); pHi = sigmoid(lhi);
-
-  // Attempt base (league context)
-  const sBin = scoreBin.value, tBin = timeBin.value, yBin = ytgBin.value;
-  const rA = lookupAttempt(env, sBin, tBin, yBin, d);
-  const pAttemptBase = rA ? rA.prob_attempt_mean : 0.0;
-  const pAttemptBase_lo = rA ? rA.prob_attempt_p10 : 0.0;
-  const pAttemptBase_hi = rA ? rA.prob_attempt_p90 : 0.0;
-
-  // Attempt adjusted by kicker advantage (coupling)
-  const A=SENS.A, B=SENS.B, C=SENS.C;
-  const lA = A + C*logit(pAttemptBase) + B*(logit(pMean) - logit(pMakeLeague));
-  const pAttemptAdj = sigmoid(lA);
-
-  // Overall chance to get 3 points
-  const pOverall = pAttemptAdj * pMean;
-
-  resultEl.innerHTML = `
-    <div><strong>Make | Attempt</strong>: ${pct(pMean)} <span class="muted">(CI ${band}%: ${pct(pLo)}–${pct(pHi)})</span></div>
-    <div><strong>Attempt % (base)</strong>: ${pct(pAttemptBase)} <span class="muted">(p10–p90: ${pct(pAttemptBase_lo)}–${pct(pAttemptBase_hi)})</span></div>
-    <div><strong>Attempt % (kicker-adjusted)</strong>: ${pct(pAttemptAdj)}</div>
-    <div><strong>Overall Make %</strong>: ${pct(pOverall)}</div>
-  `;
-
-  const wShow = env==='indoor'?0:wind;
-  detailsEl.textContent = `Inputs: ${d} yd, ${env}, ${Math.round(temp)}°F, wind ${Math.round(wShow)} mph · Score=${sBin}, Time=${tBin}, YTG=${yBin} · ${base.mode}`;
-
-  drawChart(env, temp, wind, d);
+  function blend(field){
+    const r00=lookup(sc.env,t0,w0,sc.dist), r10=lookup(sc.env,t1,w0,sc.dist),
+          r01=lookup(sc.env,t0,w1,sc.dist), r11=lookup(sc.env,t1,w1,sc.dist);
+    if(!r00||!r10||!r01||!r11) return null;
+    const wt=(t1===t0)?0:(sc.temp-t0)/(t1-t0), ww=(w1===w0)?0:(sc.wind-w0)/(w1-w0);
+    const f=(r)=> r[field] ?? r.attempt_mean ?? r.prob_mean;
+    const v00=f(r00), v10=f(r10), v01=f(r01), v11=f(r11);
+    const v0=v00*(1-wt)+v10*wt, v1=v01*(1-wt)+v11*wt;
+    return v0*(1-ww)+v1*ww;
+  }
+  const mean=blend("attempt_mean"); if(mean==null) return null;
+  const lo=blend("attempt_p10") ?? Math.max(0, mean-0.1);
+  const hi=blend("attempt_p90") ?? Math.min(1, mean+0.1);
+  return {mean, lo, hi};
 }
 
-function drawChart(env, temp, wind, dSel){
-  const W=800,H=220,PAD=34;
-  const xs=[], meanYs=[], loYs=[], hiYs=[];
-  for(let d=18; d<=68; d++){
-    const r = interpBilinearLogit(env, temp, wind, d);
-    if(!r) continue;
-    xs.push(d); meanYs.push(r.mean); loYs.push(r.lo); hiYs.push(r.hi);
-  }
-  const kid = kickerSel.value;
-  if (kid){
-    const krec = KMAP.get(kid);
-    for(let i=0;i<xs.length;i++){
-      const ks = kickerShiftForDistance(krec, xs[i]);
-      meanYs[i] = sigmoid(logit(meanYs[i]) + ks.delta);
-      loYs[i]   = sigmoid(logit(loYs[i])   + ks.delta - (ks.se||0));
-      hiYs[i]   = sigmoid(logit(hiYs[i])   + ks.delta + (ks.se||0));
-    }
-  }
-
+/* ---------- Render chart ---------- */
+function drawChart(sc, pBase, pAdj){
+  const W=900, H=280, PAD=36;
   const xmin=18,xmax=68,ymin=0,ymax=1;
-  const sx=x=>PAD+(x-xmin)/(xmax-xmin)*(W-2*PAD);
-  const sy=y=>H-PAD-(y-ymin)/(ymax-ymin)*(H-2*PAD);
-  const path=(xs,ys)=>xs.map((x,i)=>`${i?'L':'M'} ${sx(x).toFixed(1)} ${sy(ys[i]).toFixed(1)}`).join(' ');
-  const meanPath=path(xs,meanYs), loPath=path(xs,loYs), hiPath=path(xs,hiYs);
-  const bandPath = meanYs.length?(()=>{
-    const up=xs.map((x,i)=>`${i?'L':'M'} ${sx(x).toFixed(1)} ${sy(hiYs[i]).toFixed(1)}`).join(' ');
-    const dn=xs.slice().reverse().map((x,i)=>`L ${sx(x).toFixed(1)} ${sy(loYs[loYs.length-1-i]).toFixed(1)}`).join(' ');
-    return `${up} ${dn} Z`;
-  })() : "";
-  const xd = sx(dSel);
+  const sx=x=> PAD + (x-xmin)/(xmax-xmin)*(W-2*PAD);
+  const sy=y=> H - PAD - (y-ymin)/(ymax-ymin)*(H-2*PAD);
 
-  chartEl.innerHTML = `
-    <rect x="0" y="0" width="${W}" height="${H}" fill="#0f141b"/>
-    <g stroke="#1f2a38" stroke-width="1" opacity="0.8">
-      ${[0.2,0.4,0.6,0.8].map(p=>`<line x1="${PAD}" x2="${W-PAD}" y1="${sy(p)}" y2="${sy(p)}"></line>`).join('')}
+  // Lines across distance
+  const xs=[], mean=[], lo=[], hi=[], meanAvg=[];
+  for(let d=18; d<=68; d++){
+    const b = interpBilinearLogit(sc.env, sc.temp, sc.wind, d);
+    if(!b) continue;
+    let m=b.mean, l=b.lo, h=b.hi;
+    const showAvg = (eShowAvg.value==='yes');
+    if(sc.kid){
+      const kre = KICKERS.find(k=>k.kicker_id===sc.kid);
+      if(kre){ const adj=applyKickerShift({mean:m,lo:l,hi:h}, kre, sc.rec); m=adj.mean; l=adj.lo; h=adj.hi; }
+    }
+    xs.push(d); mean.push(m); lo.push(l); hi.push(h);
+    meanAvg.push(b.mean);
+  }
+
+  const path=(ys)=> xs.map((x,i)=> `${i?'L':'M'} ${sx(x).toFixed(1)} ${sy(ys[i]).toFixed(1)}`).join(' ');
+  const bandPath = (upper,lower)=>{
+    const up=xs.map((x,i)=> `${i?'L':'M'} ${sx(x).toFixed(1)} ${sy(upper[i]).toFixed(1)}`).join(' ');
+    const dn=xs.slice().reverse().map((x,i)=> `L ${sx(x).toFixed(1)} ${sy(lower[lower.length-1-i]).toFixed(1)}`).join(' ');
+    return `${up} ${dn} Z`;
+  };
+
+  const selX = sx(sc.dist);
+  const avgPath = path(meanAvg);
+
+  eChart.innerHTML = `
+    <defs>
+      <linearGradient id="grad" x1="0" x2="0" y1="0" y2="1">
+        <stop offset="0%" stop-color="${getComputedStyle(document.documentElement).getPropertyValue('--acc').trim()}33"/>
+        <stop offset="100%" stop-color="transparent"/>
+      </linearGradient>
+    </defs>
+    <rect x="0" y="0" width="${W}" height="${H}" rx="12" fill="transparent"/>
+    <g stroke="var(--border)" opacity=".8">
+      ${[0.2,0.4,0.6,0.8].map(p=> `<line x1="${PAD}" x2="${W-PAD}" y1="${sy(p)}" y2="${sy(p)}"></line>`).join('')}
+      <line x1="${sx(20)}" x2="${sx(20)}" y1="${PAD}" y2="${H-PAD}"></line>
+      <line x1="${sx(30)}" x2="${sx(30)}" y1="${PAD}" y2="${H-PAD}"></line>
+      <line x1="${sx(40)}" x2="${sx(40)}" y1="${PAD}" y2="${H-PAD}"></line>
+      <line x1="${sx(50)}" x2="${sx(50)}" y1="${PAD}" y2="${H-PAD}"></line>
+      <line x1="${sx(60)}" x2="${sx(60)}" y1="${PAD}" y2="${H-PAD}"></line>
     </g>
-    <path d="${bandPath}" fill="#3da9fc22" stroke="none"></path>
-    <path d="${meanPath}" fill="none" stroke="#3da9fc" stroke-width="2"></path>
-    <path d="${loPath}"   fill="none" stroke="#3da9fc55" stroke-width="1"></path>
-    <path d="${hiPath}"   fill="none" stroke="#3da9fc55" stroke-width="1"></path>
-    <line x1="${xd}" x2="${xd}" y1="${PAD}" y2="${H-PAD}" stroke="#ffcc66" stroke-width="2" stroke-dasharray="4 4"></line>
+    <path d="${bandPath(hi,lo)}" fill="url(#grad)" stroke="none"></path>
+    <path d="${path(mean)}" fill="none" stroke="var(--acc)" stroke-width="2.4"></path>
+    ${(eShowAvg.value==='yes') ? `<path d="${avgPath}" fill="none" stroke="var(--muted)" stroke-dasharray="5 4" stroke-width="1.6"></path>` : '' }
+    <line x1="${selX}" x2="${selX}" y1="${PAD}" y2="${H-PAD}" stroke="var(--warn)" stroke-width="2" stroke-dasharray="6 5"></line>
+    <text x="${selX+6}" y="${PAD+12}" fill="var(--warn)" font-size="12" font-weight="700">${sc.dist} yd</text>
   `;
 }
 
-// ---- loading with serverless fallback ----
-async function tryFetch(url){ const r=await fetch(url); if(!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }
-function readFileAsJSON(input){ return new Promise((res,rej)=>{ if(!input.files||!input.files[0]) return rej(new Error("No file"));
-  const fr=new FileReader(); fr.onload=()=>{ try{res(JSON.parse(fr.result))}catch(e){rej(e)} }; fr.onerror=()=>rej(fr.error); fr.readAsText(input.files[0]); }); }
+/* ---------- Table ---------- */
+function renderTable(){
+  const sc=scenario();
+  const base=basePoint(sc); if(!base){ eTbl.innerHTML=""; return; }
+  const league=base.mean;
+  const rows=[];
+  const q=(eFilter.value||"").toLowerCase();
+  for(const k of KICKERS){
+    if(q && !((k.kicker_name||"").toLowerCase().includes(q))) continue;
+    const d=kickerDelta(sc.rec, k);
+    const se=k.se??0;
+    const p = sigmoid(logit(league)+d);
+    rows.push({
+      name:k.kicker_name||k.kicker_id, eff:k.eff_attempts??"", rec:(k.recency_score!=null? k.recency_score.toFixed(2):""), d, p, edge:p-league
+    });
+  }
+  rows.sort((a,b)=> b.p - a.p);
+  eTbl.innerHTML = rows.slice(0,40).map(r=>`
+    <tr>
+      <td>${r.name}</td>
+      <td>${r.eff}</td>
+      <td>${r.rec}</td>
+      <td>${fmt(r.d,3)}</td>
+      <td>${pct(r.p)}</td>
+      <td>${(r.edge>=0?'+':'')}${pct(r.edge)}</td>
+    </tr>
+  `).join('');
+}
+function downloadCSV(){
+  const sc=scenario(); const base=basePoint(sc); if(!base) return;
+  const league=base.mean;
+  let csv="kicker,eff_attempts,recency,delta_logit,make_pct,edge_pct\n";
+  const q=(eFilter.value||"").toLowerCase();
+  for(const k of KICKERS){
+    if(q && !((k.kicker_name||"").toLowerCase().includes(q))) continue;
+    const d=kickerDelta(sc.rec, k);
+    const p=sigmoid(logit(league)+d), edge=p-league;
+    csv += `"${(k.kicker_name||k.kicker_id)}",${k.eff_attempts??""},${k.recency_score??""},${d},${(p*100).toFixed(2)},${(edge*100).toFixed(2)}\n`;
+  }
+  const blob=new Blob([csv],{type:"text/csv"}), a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download="kicker_rankings.csv"; a.click(); URL.revokeObjectURL(a.href);
+}
 
+/* ---------- Recompute & UI KPIs ---------- */
+function recompute(){
+  if(!GRID) return;
+  const sc=scenario();
+  const base=basePoint(sc);
+  if(!base){
+    eDetails.innerHTML='<span class="err">No grid coverage at these settings.</span>';
+    eKMeta.textContent='—'; eMake.textContent='—'; eBandKPI.textContent='—'; eEdge.textContent='—';
+    drawChart(sc,{},{});
+    return;
+  }
+  let show=base, delta=0, se=0, kickerName='—';
+  if(sc.kid){
+    const kre=KICKERS.find(k=>k.kicker_id===sc.kid);
+    if(kre){
+      const adj=applyKickerShift(base, kre, sc.rec);
+      show=adjustBand(adj, sc.band);
+      delta=adj.delta; se=adj.se; kickerName=kre.kicker_name||kre.kicker_id;
+      eKMeta.textContent = `Kicker: ${kickerName} · Δlogit=${fmt(delta)} · SE=${fmt(se)} · recency=${fmt(kre.recency_score??0,2)}`;
+    } else {
+      show=adjustBand(base, sc.band); eKMeta.textContent="—";
+    }
+  } else {
+    show=adjustBand(base, sc.band); eKMeta.textContent="—";
+  }
+
+  // KPIs
+  eMake.textContent = pct(show.mean);
+  eBandKPI.textContent = `CI ${sc.band}%: ${pct(show.lo)} – ${pct(show.hi)}`;
+  eEdge.textContent = ((show.mean-base.mean)>=0?'+':'') + pct(show.mean-base.mean);
+
+  // Attempt likelihood (if artifact present)
+  const at=attemptProb(sc);
+  if(at){
+    eAttempt.textContent = pct(at.mean);
+    eAttemptMeta.textContent = `CI: ${pct(at.lo)}–${pct(at.hi)}`;
+  }else{
+    eAttempt.textContent = '—';
+    eAttemptMeta.textContent = 'No attempt model loaded';
+  }
+
+  // Details
+  const wShow = (sc.env==='indoor'?0:sc.wind);
+  eDetails.textContent = `LOS ${clamp(sc.dist-17,1,50)} • ${sc.dist} yd • ${sc.env} • ${Math.round(sc.temp)}°F • wind ${Math.round(wShow)} mph`;
+
+  // Chart + table
+  drawChart(sc, base, show);
+  renderTable();
+
+  // Update URL (shareable)
+  const params = new URLSearchParams({d:sc.dist,e:sc.env,t:Math.round(sc.temp),w:wShow,k:sc.kid||'',r:sc.rec, b:sc.band, a:eShowAvg.value});
+  history.replaceState(null,"",`?${params.toString()}`);
+}
+
+/* ---------- Share & Export ---------- */
+el('btnShare').onclick=async()=>{
+  try{ await navigator.clipboard.writeText(location.href); el('btnShare').textContent="Copied!"; setTimeout(()=>el('btnShare').textContent="Copy Share Link",1200); }
+  catch{ /* noop */ }
+};
+el('btnPNG').onclick=()=>{
+  const svg=eChart; const xml=new XMLSerializer().serializeToString(svg);
+  const img=new Image(); const blob=new Blob([xml],{type:"image/svg+xml;charset=utf-8"}); const url=URL.createObjectURL(blob);
+  img.onload=function(){
+    const canvas=document.createElement('canvas'); canvas.width=1800; canvas.height=560;
+    const ctx=canvas.getContext('2d'); ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--surface'); ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(img,0,0,canvas.width,canvas.height);
+    const a=document.createElement('a'); a.download='fg_chart.png'; a.href=canvas.toDataURL('image/png'); a.click(); URL.revokeObjectURL(url);
+  };
+  img.src=url;
+};
+
+/* ---------- Boot ---------- */
 async function boot(){
-  try{
-    loadMsgEl.textContent = "Loading JSONs via fetch…";
-    GRID    = await tryFetch("./fg_prob_grid_distance_env_temp_wind.json");
-    KICKERS = await tryFetch("./kicker_deltas_logit_banded.json");
-    ATTEMPT = await tryFetch("./fg_attempt_grid_distance_env_context.json");
-    SENS    = await tryFetch("./attempt_sensitivity.json");
-    loadMsgEl.textContent = "Loaded via fetch.";
-    afterLoad();
-  }catch(e){
-    console.warn("Fetch failed:", e);
-    loadMsgEl.innerHTML = `<span class="warn">Fetch failed (likely file:// CORS). Upload the four JSONs below or run a local server.</span>`;
-    document.getElementById('fallbackUpload').style.display = "flex";
-    btnUseUploads.onclick = async ()=>{
+  eDiagBody.innerHTML="";
+  const g=await tryFetchOneOf(FILES.grid); addDiagRow("Grid", g.tried, g.status, g.ok); if(g.ok) GRID=g.data;
+  const k=await tryFetchOneOf(FILES.kickers); addDiagRow("Kickers", k.tried, k.status, k.ok); if(k.ok) KICKERS=k.data;
+  const ag=await tryFetchOneOf(FILES.attemptGrid); addDiagRow("Attempt Grid (opt)", ag.tried, ag.status, ag.ok); if(ag.ok) ATTEMPT_GRID=ag.data;
+  const asv=await tryFetchOneOf(FILES.attemptSens); addDiagRow("Attempt Sens (opt)", asv.tried, asv.status, asv.ok); if(asv.ok) ATTEMPT_SENS=asv.data;
+
+  if(!GRID || !KICKERS){
+    eLoadMsg.innerHTML='<span class="warn">Missing required artifacts — upload below or place JSONs next to index.html</span>';
+    el('btnUseUploads').onclick=async()=>{
       try{
-        GRID    = await readFileAsJSON(fileGrid);
-        KICKERS = await readFileAsJSON(fileKickers);
-        ATTEMPT = await readFileAsJSON(fileAttempt);
-        SENS    = await readFileAsJSON(fileSens);
-        loadMsgEl.textContent = "Loaded via file uploads.";
-        document.getElementById('fallbackUpload').style.display = "none";
+        if(!GRID) GRID=await readFileAsJSON(el('fileGrid'));
+        if(!KICKERS) KICKERS=await readFileAsJSON(el('fileKickers'));
+        if(!ATTEMPT_GRID && el('fileAttempt').files.length) ATTEMPT_GRID=await readFileAsJSON(el('fileAttempt'));
+        if(!ATTEMPT_SENS && el('fileSens').files.length) ATTEMPT_SENS=await readFileAsJSON(el('fileSens'));
         afterLoad();
-      }catch(err){
-        loadMsgEl.innerHTML = `<span class="warn">Upload parse error: ${err.message}</span>`;
-      }
+      }catch(e){ eLoadMsg.innerHTML=`<span class="err">Upload parse error: ${e.message}</span>`; }
     };
+  } else {
+    eLoadMsg.textContent="Artifacts loaded.";
+    afterLoad();
   }
 }
 function afterLoad(){
-  buildMakeIndex();
-  buildAttemptIndex();
-  populateKickers();
-  onEnvChange();
+  buildIndex(); kickerOptions();
+  // read query params
+  const q=new URLSearchParams(location.search);
+  const d=+q.get('d')||45, e=q.get('e')||'indoor', t=+q.get('t')||70, w=+q.get('w')||0, k=q.get('k')||'', r=+(q.get('r')||1), b=+(q.get('b')||80), a=q.get('a')||'no';
+  eDistance.value=d; eUiDist.value=d; eLOS.value=clamp(d-17,1,50);
+  eEnv.value=e; eTemp.value=t; eWind.value=(e==='indoor'?0:w); eKicker.value=k; eRec.value=r; eBand.value=b; eShowAvg.value=a;
+  onEnvChange(); // sets wind disabled when indoor
   recompute();
 }
 boot();
