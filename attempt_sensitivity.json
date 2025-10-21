@@ -1,0 +1,1 @@
+{"note": "logit(Attempt) = A + C*logit(P_attempt_base) + B*(logit(P_make_kicker)-logit(P_make_league))", "A": -0.12774063101231126, "B": 0.5280300011792534, "C": 1.1944978143747786}
