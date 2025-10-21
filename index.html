@@ -3,640 +3,477 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>NFL FG Probability — Coach Console</title>
-<meta name="color-scheme" content="dark light">
+<title>NFL FG Probability — Pro Coach UI (v2)</title>
 <style>
   :root{
-    --bg:#0b0f14; --surface:#0e141c; --card:#111925; --muted:#9fb0c3; --acc:#4aa8ff;
-    --ok:#2ecc71; --warn:#ffcc66; --err:#e74c3c; --ink:#e8f0fb; --border:#253343;
+    --bg:#0b0f14;--card:#10161f;--muted:#9fb0c3;--text:#e9f0f7;--acc:#3da9fc;--accent-2:#7ae582;--warn:#ffcc66;--border:#233041;--grid:#1f2a38;
+    --focus: 0 0 0 3px #264b9333, 0 0 0 1px var(--acc);
   }
-  @media (prefers-color-scheme: light){
-    :root{ --bg:#f7f9fc; --surface:#f4f7fb; --card:#ffffff; --ink:#0c1a28; --border:#dbe6f2; --muted:#50657a; --acc:#1f7aff; }
-  }
-  *{ box-sizing:border-box }
-  html,body{ height:100% }
-  body{
-    margin:0; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, "Helvetica Neue", Arial;
-    color:var(--ink); background:linear-gradient(180deg,var(--bg),var(--surface));
-  }
-  .topbar{
-    position:sticky; top:0; z-index:20; backdrop-filter: blur(10px);
-    background: color-mix(in oklab, var(--surface) 85%, transparent);
-    border-bottom:1px solid var(--border);
-  }
-  .topwrap{ max-width:1200px; margin:0 auto; padding:14px 16px; display:flex; align-items:center; gap:14px }
-  .brand{
-    display:flex; align-items:center; gap:12px; font-weight:800; letter-spacing:.2px; font-size:18px;
-  }
-  .brand .badge{ width:28px; height:28px; border-radius:8px; display:grid; place-items:center;
-    background:radial-gradient(75% 75% at 25% 20%, #7cc2ff 0%, #4aa8ff 45%, #0a4ea6 100%); color:white; font-weight:900 }
-  .wrap{ max-width:1200px; margin:22px auto; padding:0 16px; }
-
-  .kpis{ display:grid; grid-template-columns: repeat(4,1fr); gap:14px; margin-bottom:16px }
-  .card{ background:var(--card); border:1px solid var(--border); border-radius:16px; padding:16px; box-shadow:0 12px 30px rgba(0,0,0,.15) }
-  .card h2{ margin:0 0 10px; font-size:16px; color:var(--muted); letter-spacing:.2px }
-  .kpi-num{ font-size:26px; font-weight:800 }
-  .kpi-sub{ color:var(--muted); font-size:12px }
-
-  .layout{ display:grid; grid-template-columns: 380px 1fr; gap:16px }
-  @media (max-width: 1000px){ .layout{ grid-template-columns:1fr } .kpis{ grid-template-columns: repeat(2,1fr) } }
-  @media (max-width: 580px){ .kpis{ grid-template-columns: 1fr } }
-
-  label{ font-size:12px; color:var(--muted) }
-  input[type="number"],select,.textlike{
-    width:100%; background:color-mix(in oklab, var(--surface) 60%, #000 0%);
-    color:var(--ink); border:1px solid var(--border); border-radius:10px; padding:9px 10px;
-  }
-  input[type="range"]{ width:100% }
-  .row{ display:grid; grid-template-columns: 1fr 120px; gap:10px; align-items:center; margin:8px 0 }
-  .row-3{ display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; align-items:center; margin:8px 0 }
-  .muted{ color:var(--muted); font-size:12px }
-  .pill{ font-size:12px; border:1px solid var(--border); border-radius:999px; padding:3px 8px; color:var(--muted) }
-
-  .toolbar{ display:flex; gap:8px; flex-wrap:wrap; align-items:center }
-  .btn{
-    appearance:none; border:1px solid var(--border); background:color-mix(in oklab, var(--surface) 60%, #000 0%);
-    color:var(--ink); padding:8px 12px; border-radius:10px; font-weight:600; cursor:pointer
-  }
-  .btn.acc{ border-color:color-mix(in oklab, var(--acc), var(--border)); background:color-mix(in oklab, var(--acc) 14%, var(--surface)); }
-  .btn:disabled{ opacity:.5; cursor:not-allowed }
-
-  .chart{ width:100%; height:280px; border:1px solid var(--border); border-radius:14px; background:color-mix(in oklab, var(--surface) 50%, #000 0%) }
-
-  .flex{ display:flex; gap:12px; flex-wrap:wrap }
-  .grow{ flex:1 1 auto }
-
-  table{ width:100%; border-collapse: collapse; font-size:13px }
-  th,td{ padding:8px 10px; border-bottom:1px solid var(--border) }
-  th{ color:var(--muted); font-weight:700; text-align:left; letter-spacing:.2px }
-  tr:hover td{ background:color-mix(in oklab, var(--surface) 25%, transparent) }
-
-  .ok{ color:var(--ok) } .warn{ color:var(--warn) } .err{ color:var(--err) }
-  details{ border:1px dashed var(--border); border-radius:12px; padding:10px 12px }
-  summary{ cursor:pointer; color:var(--muted); font-weight:700 }
-  .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:14px }
-  @media (max-width:800px){ .grid-2{ grid-template-columns:1fr } }
-
-  .tag{ display:inline-block; padding:2px 6px; border-radius:6px; border:1px solid var(--border); color:var(--muted); font-size:11px }
+  html,body{height:100%}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Inter,Arial;background:var(--bg);color:var(--text)}
+  a{color:var(--acc)}
+  .wrap{max-width:1200px;margin:28px auto;padding:0 16px}
+  .topbar{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:16px}
+  .brand{display:flex;gap:12px;align-items:center}
+  h1{font-size:24px;margin:0 0 4px 0}
+  .tagline{color:var(--muted);font-size:13px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.25);margin-bottom:16px}
+  .grid{display:grid;grid-template-columns:360px 1fr;gap:16px}
+  @media (max-width: 980px){.grid{grid-template-columns:1fr}}
+  label{font-size:13px;color:var(--muted)}
+  .row{display:grid;grid-template-columns:1fr 120px;gap:8px;align-items:center;margin:10px 0}
+  .row-2{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:center;margin:10px 0}
+  .controls input[type="number"], .controls select, .controls input[type="text"]{background:#0e141c;color:var(--text);border:1px solid var(--border);border-radius:10px;padding:8px 10px;width:100%}
+  .controls input[type="range"]{width:100%}
+  .muted{color:var(--muted);font-size:12px}
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:#0f141b;border:1px solid var(--border);color:var(--muted);font-size:12px}
+  .kmeta{font-size:12px;color:var(--muted);margin-top:4px}
+  .btn{background:#0f141b;border:1px solid var(--border);color:var(--text);border-radius:10px;padding:8px 10px;cursor:pointer}
+  .btn:hover{border-color:#37506b}
+  .btn.primary{background:linear-gradient(180deg,#1a2634,#111823);border-color:#2b415a}
+  .btn.ghost{background:transparent}
+  .btnbar{display:flex;flex-wrap:wrap;gap:8px}
+  .statbar{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  @media (max-width: 680px){.statbar{grid-template-columns:repeat(2,1fr)}}
+  .stat{background:#0f141b;border:1px solid var(--border);border-radius:12px;padding:12px}
+  .stat h3{margin:0 0 2px 0;font-size:15px;color:var(--muted)}
+  .stat .val{font-size:20px;font-weight:700}
+  .svgbox{width:100%;height:280px;background:#0f141b;border:1px solid var(--border);border-radius:14px}
+  .warn{color:var(--warn)}
+  .toggle{display:flex;gap:8px;align-items:center}
+  .right{display:flex;gap:12px;align-items:center}
+  .divider{height:1px;background:var(--border);margin:14px 0}
+  .footer{display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .kbd{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#0e141c;border:1px solid var(--border);border-radius:6px;padding:2px 6px;font-size:12px;color:var(--muted)}
+  .help{border-left:3px solid #25415d;padding-left:12px}
+  .badge{display:inline-block;background:#142233;border:1px solid #22374d;padding:2px 8px;border-radius:999px;color:#a6c1da;font-size:12px}
+  .filezone{display:flex;flex-wrap:wrap;gap:8px}
+  .filezone input[type="file"]{display:block}
+  .switch{position:relative;display:inline-block;width:44px;height:24px}
+  .switch input{opacity:0;width:0;height:0}
+  .slider{position:absolute;cursor:pointer;inset:0;background:#16212e;border:1px solid var(--border);transition:.2s;border-radius:999px}
+  .slider:before{content:"";position:absolute;height:18px;width:18px;left:3px;top:50%;transform:translateY(-50%);background:#2c3a4e;border-radius:50%;transition:.2s}
+  .switch input:checked + .slider{background:#152438;border-color:#33557a}
+  .switch input:checked + .slider:before{transform:translate(20px,-50%)}
+  .toast{position:fixed;right:16px;bottom:16px;background:#0f141b;border:1px solid var(--border);padding:10px 12px;border-radius:10px;color:var(--text);box-shadow:0 6px 20px rgba(0,0,0,.35);opacity:0;transform:translateY(6px);transition:.2s}
+  .toast.show{opacity:1;transform:translateY(0)}
+  .vis-legend{display:flex;gap:12px;align-items:center;margin-top:8px}
+  .legend-item{display:flex;gap:6px;align-items:center}
+  .dot{width:10px;height:10px;border-radius:50%}
+  .dot.make{background:var(--acc)}
+  .dot.ci{background:rgba(61,169,252,.25);border:1px solid rgba(61,169,252,.5)}
+  .dot.attempt{background:var(--accent-2)}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  .hint{color:#a6c1da;font-size:12px}
+  .kbd-row{display:flex;gap:8px;align-items:center}
+  .subtle{opacity:.85}
+  .danger{color:#ff8e8e}
+  /* focus */
+  .btn:focus, select:focus, input:focus{outline:none;box-shadow:var(--focus)}
 </style>
 </head>
 <body>
-<header class="topbar">
-  <div class="topwrap">
-    <div class="brand"><div class="badge">FG</div> NFL Field Goal Probability — <span style="font-weight:600">Coach Console</span></div>
-    <div class="grow"></div>
-    <div class="toolbar">
-      <button class="btn" id="btnShare">Copy Share Link</button>
-      <button class="btn" id="btnPNG" title="Download chart as PNG">Download Chart</button>
-      <a class="btn acc" href="https://github.com/aaronwolk00/kicker_probs" target="_blank" rel="noreferrer">GitHub</a>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">
+      <div class="badge">Coach View</div>
+      <div>
+        <h1>Field Goal Probability — Coupled</h1>
+        <div class="tagline">Bilinear Make% (Temp×Wind) + recency-weighted kicker deltas + context-driven Attempt% with coupling.</div>
+      </div>
+    </div>
+    <div class="right">
+      <label class="toggle" title="Toggle compact labels on chart">
+        <span class="muted">Axes</span>
+        <label class="switch"><input id="toggleAxes" type="checkbox" checked/><span class="slider"></span></label>
+      </label>
+      <button class="btn" id="btnShare" title="Copy a permalink with current settings">Share</button>
+      <button class="btn" id="btnReset" title="Reset inputs to defaults">Reset</button>
     </div>
   </div>
-</header>
 
-<main class="wrap">
-  <!-- KPIs -->
-  <section class="kpis">
-    <div class="card">
-      <h2>Make Probability</h2>
-      <div class="kpi-num" id="kpiMake">—</div>
-      <div class="kpi-sub" id="kpiBand">—</div>
-    </div>
-    <div class="card">
-      <h2>Vs League Baseline</h2>
-      <div class="kpi-num" id="kpiEdge">—</div>
-      <div class="kpi-sub">Delta at current conditions</div>
-    </div>
-    <div class="card">
-      <h2>Attempt Likelihood</h2>
-      <div class="kpi-num" id="kpiAttempt">—</div>
-      <div class="kpi-sub" id="kpiAttemptMeta">Team/Context propensity</div>
-    </div>
-    <div class="card">
-      <h2>Confidence</h2>
-      <div class="kpi-num" id="kpiConf">80% band</div>
-      <div class="kpi-sub"><span class="tag" id="metaBags">bags: —</span> <span class="tag" id="metaGrid">grid: —</span></div>
-    </div>
-  </section>
-
-  <section class="layout">
+  <div class="grid">
     <!-- Controls -->
-    <div class="card">
-      <h2>Scenario Inputs</h2>
-      <div class="row">
-        <label>Line of Scrimmage (yard line)</label>
-        <div class="flex">
-          <input id="los" type="number" min="1" max="50" value="28" oninput="syncFromLOS()" class="grow" />
-          <div class="pill">distance ≈ LOS + 17</div>
-        </div>
+    <div class="card controls" aria-label="Inputs">
+      <div class="btnbar" style="margin-bottom:6px">
+        <button class="btn ghost" data-preset-temp="20">Cold 20°F</button>
+        <button class="btn ghost" data-preset-temp="50">Mild 50°F</button>
+        <button class="btn ghost" data-preset-temp="70">Warm 70°F</button>
+        <button class="btn ghost" data-preset-temp="90">Hot 90°F</button>
+        <button class="btn ghost" data-preset-wind="0">Calm</button>
+        <button class="btn ghost" data-preset-wind="5">Breeze</button>
+        <button class="btn ghost" data-preset-wind="15">Windy</button>
       </div>
       <div class="row">
-        <label>Kick Distance (yards)</label>
-        <div class="flex">
-          <input id="distance" type="range" min="18" max="68" step="1" value="45" oninput="uiDist.value=value; syncFromDist()"/>
-          <input id="uiDist" type="number" min="18" max="68" step="1" value="45" oninput="distance.value=value; syncFromDist()" style="width:96px"/>
-        </div>
+        <label for="distance">Distance (yards)</label>
+        <input id="distance" type="range" min="18" max="68" step="1" value="61"/>
       </div>
       <div class="row">
-        <label>Environment</label>
-        <select id="env" onchange="onEnvChange()">
-          <option value="indoor">Indoor</option>
-          <option value="outdoor">Outdoor</option>
-        </select>
+        <label for="uiDist" class="sr-only">Distance numeric</label>
+        <input id="uiDist" type="number" min="18" max="68" step="1" value="61"/>
+        <span class="muted">Use <span class="kbd">↑/↓</span> to nudge</span>
       </div>
-      <div class="row-3">
+
+      <div class="row-2">
         <div>
-          <label>Temperature (°F)</label>
-          <input id="temp" type="number" value="70" step="1" oninput="recompute()"/>
+          <label for="env">Environment</label>
+          <select id="env">
+            <option value="indoor">Indoor</option>
+            <option value="outdoor" selected>Outdoor</option>
+          </select>
+        </div>
+        <div class="hint">Roof listed as “outdoors” → Outdoor; else Indoor.</div>
+      </div>
+
+      <div class="row-2">
+        <div>
+          <label for="temp">Temperature (°F)</label>
+          <input id="temp" type="number" value="65" step="1"/>
         </div>
         <div>
-          <label>Wind (mph)</label>
-          <input id="wind" type="number" value="0" step="1" oninput="recompute()"/>
+          <label for="wind">Wind (mph)</label>
+          <input id="wind" type="number" value="5" step="1"/>
+          <div class="hint">Indoor forces 0</div>
+        </div>
+      </div>
+
+      <div class="row-2">
+        <div>
+          <label for="kickerSearch">Kicker (search)</label>
+          <input id="kickerSearch" type="text" placeholder="Start typing a name…" autocomplete="off"/>
         </div>
         <div>
-          <label>Confidence band</label>
-          <select id="band" onchange="recompute()">
-            <option value="80">80% (p10–p90)</option>
-            <option value="68">~68% (approx)</option>
-            <option value="90">90% (approx)</option>
+          <label for="kicker">Kicker</label>
+          <select id="kicker"><option value="">— none —</option></select>
+        </div>
+      </div>
+
+      <div class="row-2">
+        <div>
+          <label for="scoreBin">Score</label>
+          <select id="scoreBin">
+            <option value="trail">Trailing (≤ −3)</option>
+            <option value="close" selected>Close (−2..+2)</option>
+            <option value="lead">Leading (≥ +3)</option>
+          </select>
+        </div>
+        <div>
+          <label for="timeBin">Time (half)</label>
+          <select id="timeBin">
+            <option value="early">Early (≈20:00)</option>
+            <option value="mid">Mid (≈10:00)</option>
+            <option value="late" selected>Late (≈2:00)</option>
           </select>
         </div>
       </div>
-      <div class="row">
-        <label>Kicker</label>
-        <select id="kicker" onchange="recompute()">
-          <option value="">— none —</option>
-        </select>
-      </div>
-      <div class="row-3">
+
+      <div class="row-2">
         <div>
-          <label>Recency Emphasis</label>
-          <input id="recency" type="range" min="0" max="1" step="0.05" value="1" oninput="recompute()">
-          <div class="muted">0 = career; 1 = recency-weighted</div>
-        </div>
-        <div>
-          <label>Show League Avg</label>
-          <select id="showAvg" onchange="recompute()">
-            <option value="yes">Yes</option>
-            <option value="no" selected>No</option>
+          <label for="ytgBin">Yards to go</label>
+          <select id="ytgBin">
+            <option value="short">Short (≤2)</option>
+            <option value="med" selected>Medium (3–6)</option>
+            <option value="long">Long (≥7)</option>
           </select>
         </div>
         <div>
-          <label>Model Meta</label>
-          <div class="textlike" id="meta">—</div>
+          <label for="band">Confidence band</label>
+          <select id="band">
+            <option value="80" selected>80% (p10–p90)</option>
+            <option value="68">~68%</option>
+            <option value="90">90%</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="muted help">
+        Make model: LGBM (monotone distance) · bagged · isotonic · bilinear (Temp×Wind).<br/>
+        Kicker: recency-weighted Bayesian deltas by distance band (weaker prior 60+).<br/>
+        Attempt model: league context grid + <em>coupling</em> ⇒ Attempt% rises with kicker Make% advantage.
+      </div>
+
+      <div id="kmeta" class="kmeta"></div>
+
+      <div class="divider"></div>
+
+      <div>
+        <div class="muted" id="loadMsg"></div>
+        <div class="filezone" id="fallbackUpload" style="display:none">
+          <label class="pill">Load make grid <input type="file" id="fileGrid" accept=".json"/></label>
+          <label class="pill">Load kicker banded JSON <input type="file" id="fileKickers" accept=".json"/></label>
+          <label class="pill">Load attempt grid <input type="file" id="fileAttempt" accept=".json"/></label>
+          <label class="pill">Load attempt sensitivity <input type="file" id="fileSens" accept=".json"/></label>
+          <button id="btnUseUploads" class="btn">Use uploaded files</button>
         </div>
       </div>
     </div>
 
-    <!-- Charts / Rankings -->
-    <div class="card">
-      <h2>Probability Curve (current conditions)</h2>
-      <svg id="chart" class="chart" viewBox="0 0 900 280" preserveAspectRatio="none" role="img" aria-label="Make probability by distance"></svg>
-      <div class="flex" style="margin-top:10px; gap:10px">
-        <div class="muted grow" id="details">—</div>
-        <div class="muted" id="kickerMeta">—</div>
+    <!-- Output -->
+    <div class="card" aria-live="polite">
+      <div class="statbar" id="statbar">
+        <div class="stat"><h3>Make | Attempt</h3><div class="val" id="statMake">—</div><div class="muted" id="statMakeCI">—</div></div>
+        <div class="stat"><h3>Attempt % (base)</h3><div class="val" id="statAttemptBase">—</div><div class="muted" id="statAttemptBaseCI">—</div></div>
+        <div class="stat"><h3>Attempt % (kicker-adjusted)</h3><div class="val" id="statAttemptAdj">—</div><div class="muted">Coupled</div></div>
+        <div class="stat"><h3>Overall Make %</h3><div class="val" id="statOverall">—</div><div class="muted">= AttemptAdj × Make</div></div>
       </div>
-    </div>
-  </section>
 
-  <section class="grid-2" style="margin-top:16px">
-    <div class="card">
-      <h2>Top Kickers at Current Conditions</h2>
-      <div class="flex" style="margin-bottom:8px">
-        <input id="filterName" placeholder="Filter by name…" class="grow" oninput="renderTable()"/>
-        <button class="btn" onclick="downloadCSV()">Export CSV</button>
+      <div class="divider"></div>
+
+      <h3 style="margin:0 0 8px 0">Distance Profile</h3>
+      <svg id="chart" class="svgbox" viewBox="0 0 880 280" preserveAspectRatio="none" role="img" aria-label="Make% curve with confidence band and attempt% overlay"></svg>
+      <div class="vis-legend">
+        <div class="legend-item"><span class="dot make"></span><span class="muted">Make%</span></div>
+        <div class="legend-item"><span class="dot ci"></span><span class="muted">CI</span></div>
+        <div class="legend-item"><span class="dot attempt"></span><span class="muted">Attempt% (context)</span></div>
       </div>
-      <table id="tbl">
-        <thead><tr>
-          <th>Kicker</th><th>EffAtt</th><th>Recency</th><th>Δlogit</th><th>Make%</th><th>Edge%</th>
-        </tr></thead>
-        <tbody></tbody>
-      </table>
-      <div class="muted" style="margin-top:6px">Make% includes kicker logit shift; Edge% is vs league baseline at same scenario.</div>
-    </div>
 
-    <div class="card">
-      <h2>Diagnostics</h2>
-      <details open>
-        <summary>Artifacts & Status</summary>
-        <table id="diag" style="margin-top:8px">
-          <thead><tr><th>Artifact</th><th>Filenames</th><th>Status</th></tr></thead>
-          <tbody id="diagBody"></tbody>
-        </table>
-      </details>
-      <details style="margin-top:10px">
-        <summary>Manual Upload (fallback)</summary>
-        <div class="flex" style="margin-top:10px; gap:8px; flex-wrap:wrap">
-          <div><label class="pill">Grid</label><input type="file" id="fileGrid" accept=".json"/></div>
-          <div><label class="pill">Kickers</label><input type="file" id="fileKickers" accept=".json"/></div>
-          <div><label class="pill">Attempt Grid</label><input type="file" id="fileAttempt" accept=".json"/></div>
-          <div><label class="pill">Attempt Sens</label><input type="file" id="fileSens" accept=".json"/></div>
-          <button class="btn acc" id="btnUseUploads">Use uploads</button>
-        </div>
-      </details>
-      <div class="muted" id="loadMsg" style="margin-top:10px">Loading…</div>
-    </div>
-  </section>
+      <div class="btnbar" style="margin-top:10px">
+        <button id="btnCSV" class="btn">Download CSV</button>
+        <button id="btnPNG" class="btn">Download PNG</button>
+        <label class="toggle" title="Show attempt% curve across distance">
+          <span class="muted">Show Attempt Curve</span>
+          <label class="switch"><input id="toggleAttempt" type="checkbox" checked/><span class="slider"></span></label>
+        </label>
+      </div>
 
-  <section class="card" style="margin-top:16px">
-    <h2>Notes</h2>
-    <ul class="muted">
-      <li>Model: Bagged LightGBM (monotone on distance) + isotonic calibration; bilinear interpolation (Temp×Wind) in logit space.</li>
-      <li>Kicker effect: constant logit shift; recency slider blends career vs recency-weighted deltas (if provided).</li>
-      <li>Wind is forced to 0 indoors. Distance monotonicity is enforced (e.g., 60 ≤ 55 ceteris paribus).</li>
-      <li>Attempt Likelihood appears when an attempt grid is supplied; else shows “—”.</li>
-    </ul>
-  </section>
-</main>
+      <div id="details" class="muted" style="margin-top:10px">—</div>
+    </div>
+  </div>
+
+  <div class="card footer">
+    <div class="muted">Tip: Press <span class="kbd">↑</span>/<span class="kbd">↓</span> to adjust distance; <span class="kbd">⌘/Ctrl</span> + <span class="kbd">C</span> on the chart to copy a PNG.</div>
+    <div class="muted subtle">v2 UI • Built for rapid what‑ifs & decision clarity.</div>
+  </div>
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<!-- Embedded tiny demo data (used only if fetch/uploads fail) -->
+<script id="demo_grid" type="application/json">{
+  "meta":{"temps":[20,50,80],"winds":[0,10,20]},
+  "grid":[
+    {"indoor_outdoor":"indoor","temp_F":20,"wind_mph":0,"distance":18,"prob_mean":0.99,"prob_p10":0.97,"prob_p90":0.995},
+    {"indoor_outdoor":"indoor","temp_F":50,"wind_mph":0,"distance":18,"prob_mean":0.99,"prob_p10":0.97,"prob_p90":0.995},
+    {"indoor_outdoor":"indoor","temp_F":80,"wind_mph":0,"distance":18,"prob_mean":0.99,"prob_p10":0.97,"prob_p90":0.995},
+    {"indoor_outdoor":"outdoor","temp_F":50,"wind_mph":10,"distance":18,"prob_mean":0.99,"prob_p10":0.97,"prob_p90":0.995},
+    {"indoor_outdoor":"outdoor","temp_F":20,"wind_mph":20,"distance":18,"prob_mean":0.985,"prob_p10":0.96,"prob_p90":0.994},
+    {"indoor_outdoor":"outdoor","temp_F":50,"wind_mph":0,"distance":40,"prob_mean":0.88,"prob_p10":0.82,"prob_p90":0.93},
+    {"indoor_outdoor":"outdoor","temp_F":50,"wind_mph":10,"distance":40,"prob_mean":0.84,"prob_p10":0.78,"prob_p90":0.90},
+    {"indoor_outdoor":"outdoor","temp_F":80,"wind_mph":20,"distance":40,"prob_mean":0.79,"prob_p10":0.72,"prob_p90":0.86},
+    {"indoor_outdoor":"outdoor","temp_F":50,"wind_mph":0,"distance":55,"prob_mean":0.60,"prob_p10":0.50,"prob_p90":0.69},
+    {"indoor_outdoor":"outdoor","temp_F":50,"wind_mph":10,"distance":55,"prob_mean":0.54,"prob_p10":0.44,"prob_p90":0.63},
+    {"indoor_outdoor":"outdoor","temp_F":50,"wind_mph":20,"distance":55,"prob_mean":0.47,"prob_p10":0.37,"prob_p90":0.57},
+    {"indoor_outdoor":"outdoor","temp_F":50,"wind_mph":10,"distance":65,"prob_mean":0.28,"prob_p10":0.20,"prob_p90":0.36},
+    {"indoor_outdoor":"outdoor","temp_F":20,"wind_mph":20,"distance":65,"prob_mean":0.20,"prob_p10":0.13,"prob_p90":0.28}
+  ]
+}</script>
+<script id="demo_kickers" type="application/json">[
+  {"kicker_id":"k1","kicker_name":"A. Accurate","attempts_eff":120.2,"bands":{"short":{"delta_logit":0.05,"se":0.02},"mid":{"delta_logit":0.04,"se":0.03},"long":{"delta_logit":0.03,"se":0.05},"xlong":{"delta_logit":0.01,"se":0.08}}},
+  {"kicker_id":"k2","kicker_name":"B. Boomer","attempts_eff":90.4,"bands":{"short":{"delta_logit":-0.02,"se":0.03},"mid":{"delta_logit":0.00,"se":0.04},"long":{"delta_logit":0.05,"se":0.05},"xlong":{"delta_logit":0.07,"se":0.06}}}
+]</script>
+<script id="demo_attempt" type="application/json">{
+  "grid":[
+    {"indoor_outdoor":"outdoor","score_bin":"close","time_bin":"late","ytg_bin":"med","distance":40,"prob_attempt_mean":0.78,"prob_attempt_p10":0.60,"prob_attempt_p90":0.90},
+    {"indoor_outdoor":"outdoor","score_bin":"close","time_bin":"late","ytg_bin":"med","distance":55,"prob_attempt_mean":0.62,"prob_attempt_p10":0.42,"prob_attempt_p90":0.80},
+    {"indoor_outdoor":"outdoor","score_bin":"close","time_bin":"late","ytg_bin":"med","distance":65,"prob_attempt_mean":0.35,"prob_attempt_p10":0.20,"prob_attempt_p90":0.55}
+  ]
+}</script>
+<script id="demo_sens" type="application/json">{"A":0.0,"B":0.55,"C":0.45}</script>
 
 <script>
-/* ---------- Filenames (with fallbacks) ---------- */
-const FILES = {
-  grid: ["./fg_prob_grid_distance_env_temp_wind.json?v=2"],
-  kickers: ["./kicker_deltas_logit_banded.json?v=2","./kicker_deltas_logit.json?v=2"],
-  attemptGrid: ["./fg_attempt_grid_distance_env_context.json?v=2","./fg_attempt_grid.json?v=2"],
-  attemptSens: ["./attempt_sensitivity.json?v=2"]
-};
+let GRID=null, KICKERS=[], ATTEMPT=null, SENS=null;
+let gridIndex=new Map(), attemptIndex=new Map(), KMAP=new Map();
+let temps=[], winds=[];
 
-/* ---------- State ---------- */
-let GRID=null, KICKERS=[], ATTEMPT_GRID=null, ATTEMPT_SENS=null;
-let gridIndex=new Map(), temps=[], winds=[];
-const el = (id)=>document.getElementById(id);
+const $ = sel => document.querySelector(sel);
+const distance  = $('#distance');
+const uiDist    = $('#uiDist');
+const envSel    = $('#env');
+const tempInp   = $('#temp');
+const windInp   = $('#wind');
+const kickerSel = $('#kicker');
+const kickerSearch = $('#kickerSearch');
+const bandSel   = $('#band');
+const scoreBin  = $('#scoreBin');
+const timeBin   = $('#timeBin');
+const ytgBin    = $('#ytgBin');
+const loadMsgEl = $('#loadMsg');
+const kmetaEl   = $('#kmeta');
+const chartEl   = $('#chart');
+const toggleAxes= $('#toggleAxes');
+const toggleAttempt = $('#toggleAttempt');
+const btnCSV    = $('#btnCSV');
+const btnPNG    = $('#btnPNG');
+const btnReset  = $('#btnReset');
+const btnShare  = $('#btnShare');
+const toastEl   = $('#toast');
 
-/* ---------- Elements ---------- */
-const eDistance=el('distance'), eUiDist=el('uiDist'), eLOS=el('los'), eEnv=el('env'), eTemp=el('temp'),
-      eWind=el('wind'), eBand=el('band'), eKicker=el('kicker'), eRec=el('recency'),
-      eChart=el('chart'), eDetails=el('details'), eKMeta=el('kickerMeta'), eMeta=el('meta'),
-      eMake=el('kpiMake'), eBandKPI=el('kpiBand'), eEdge=el('kpiEdge'), eAttempt=el('kpiAttempt'),
-      eAttemptMeta=el('kpiAttemptMeta'), eMetaBags=el('metaBags'), eMetaGrid=el('metaGrid'),
-      eShowAvg=el('showAvg'), eTbl=el('tbl').querySelector('tbody'),
-      eDiagBody=el('diagBody'), eLoadMsg=el('loadMsg'), eFilter=el('filterName');
+const statMake=$('#statMake'), statMakeCI=$('#statMakeCI');
+const statAttemptBase=$('#statAttemptBase'), statAttemptBaseCI=$('#statAttemptBaseCI');
+const statAttemptAdj=$('#statAttemptAdj'), statOverall=$('#statOverall');
+const detailsEl=$('#details');
 
-/* ---------- Utilities ---------- */
-const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-const logit=(p)=>{p=Math.min(Math.max(p,1e-9),1-1e-9);return Math.log(p/(1-p));};
-const sigmoid=(x)=>1/(1+Math.exp(-x));
-const pct=(x)=> (x*100).toFixed(1)+"%";
-const fmt=(x,n=3)=> (Math.abs(x)>=1? x.toFixed(2): x.toFixed(n));
+const upWrap       = $('#fallbackUpload');
+const fileGrid     = $('#fileGrid');
+const fileKickers  = $('#fileKickers');
+const fileAttempt  = $('#fileAttempt');
+const fileSens     = $('#fileSens');
+const btnUseUploads= $('#btnUseUploads');
 
-function addDiagRow(name,tried,status,ok){
-  const tr=document.createElement('tr');
-  tr.innerHTML=`<td>${name}</td><td style="font-size:12px;color:var(--muted)">${tried.join(" | ")}</td><td>${ ok?'<span class="ok">Loaded</span>':`<span class="err">${status}</span>`}</td>`;
-  eDiagBody.appendChild(tr);
-}
-async function tryFetchOneOf(names){
-  let last=null;
-  for(const url of names){
-    try{ const r=await fetch(url,{cache:"no-store"}); if(!r.ok) throw new Error("HTTP "+r.status);
-      return {ok:true,data:await r.json(), tried:names, status:"OK "+url}; }catch(e){ last=e; }
-  }
-  return {ok:false,data:null,tried:names,status:last?last.message:"Error"};
-}
-function readFileAsJSON(input){
-  return new Promise((res,rej)=>{
-    if(!input.files||!input.files[0]) return rej(new Error("No file"));
-    const fr=new FileReader();
-    fr.onload=()=>{ try{res(JSON.parse(fr.result));}catch(e){rej(e);} };
-    fr.onerror=()=>rej(fr.error);
-    fr.readAsText(input.files[0]);
-  });
-}
+function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
+function logit(p){ p = Math.min(Math.max(p,1e-9), 1-1e-9); return Math.log(p/(1-p)); }
+function sigmoid(x){ return 1/(1+Math.exp(-x)); }
+function pct(x,dp=1){ return (x*100).toFixed(dp) + "%"; }
 
-/* ---------- Build index & interpolation ---------- */
-function buildIndex(){
-  gridIndex.clear(); temps=GRID.meta.temps.slice(); winds=GRID.meta.winds.slice();
-  for(const r of GRID.grid){ gridIndex.set(`${r.indoor_outdoor}|${r.temp_F}|${r.wind_mph}|${r.distance}`, r); }
-  eMeta.textContent = `bags=${GRID.meta.n_bags}, temp=${temps[0]}–${temps.at(-1)}°F, wind=${winds[0]}–${winds.at(-1)} mph`;
-  eMetaBags.textContent = `bags: ${GRID.meta.n_bags}`;
-  eMetaGrid.textContent = `grid: T=${temps.length} × W=${winds.length} × D`;
-}
-function neighbors(val, arr){
-  if(val<=arr[0]) return [arr[0],arr[0]];
-  if(val>=arr.at(-1)) return [arr.at(-1),arr.at(-1)];
-  for(let i=0;i<arr.length-1;i++){ if(val>=arr[i] && val<=arr[i+1]) return [arr[i],arr[i+1]]; }
-  return [arr[0],arr[0]];
-}
-function lookupCell(env,temp,wind,dist){ return gridIndex.get(`${env}|${temp}|${wind}|${dist}`) || null; }
-function interpBilinearLogit(env,temp,wind,dist){
-  if(env==='indoor') wind=0;
-  const [t0,t1]=neighbors(temp,temps), [w0,w1]=neighbors(wind,winds);
-  const sameT=(t0===t1), sameW=(w0===w1);
-  const r00=lookupCell(env,t0,w0,dist), r10=lookupCell(env,t1,w0,dist), r01=lookupCell(env,t0,w1,dist), r11=lookupCell(env,t1,w1,dist);
-  if(!r00 || (!sameT && !r10) || (!sameW && !r01) || (!sameT && !sameW && !r11)) return null;
-  const wt= sameT?0:(temp-t0)/(t1-t0), ww= sameW?0:(wind-w0)/(w1-w0);
-  function blend(field){
-    const L00=logit(r00[field]);
-    const L10=sameT?L00:logit(r10[field]);
-    const L01=sameW?L00:logit(r01[field]);
-    const L11=(sameT&&sameW)?L00:logit(r11[field]);
-    const L0=L00*(1-wt)+L10*wt, L1=L01*(1-wt)+L11*wt;
-    return sigmoid(L0*(1-ww)+L1*ww);
-  }
-  return {mean:blend("prob_mean"), lo:blend("prob_p10"), hi:blend("prob_p90")};
-}
-function ciScale(b){ if(b===80) return 1; if(b===68) return 0.68/0.80; if(b===90) return 0.90/0.80; return 1; }
+function showToast(msg){ toastEl.textContent=msg; toastEl.classList.add('show'); setTimeout(()=>toastEl.classList.remove('show'), 1200); }
 
-/* ---------- Kicker UI ---------- */
-function kickerOptions(){
-  const frag=document.createDocumentFragment();
-  const sorted=[...KICKERS].sort((a,b)=> (b.recency_score??0)-(a.recency_score??0) || (b.eff_attempts??0)-(a.eff_attempts??0));
-  for(const k of sorted){
-    const opt=document.createElement('option');
-    const tag = (k.eff_attempts!=null)? ` (${k.eff_attempts})`:'';
-    opt.value=k.kicker_id; opt.textContent=`${k.kicker_name||k.kicker_id}${tag}`;
-    frag.appendChild(opt);
-  }
-  eKicker.appendChild(frag);
-}
-function kickerDelta(recencyBlend, krec){
-  // Prefer banded/recency delta if present; blend with career delta when slider < 1
-  const hasBand = (krec.band_delta!=null);
-  const band = krec.band_delta ?? krec.delta_logit ?? 0;
-  const career = krec.delta_logit ?? band;
-  return career*(1-recencyBlend) + band*(recencyBlend);
-}
+function onEnvChange(){ if (envSel.value === 'indoor'){ windInp.value = 0; windInp.disabled = true; } else { windInp.disabled = false; } recompute(); }
 
-/* ---------- LOS/Distance sync ---------- */
-function syncFromLOS(){
-  const los = clamp(parseInt(eLOS.value||0,10),1,50);
-  const dist = clamp(los + 17, 18, 68);
-  eLOS.value = los; eDistance.value = dist; eUiDist.value=dist;
-  recompute();
-}
-function syncFromDist(){
-  const d = clamp(parseInt(eDistance.value,10),18,68);
-  eUiDist.value=d; eLOS.value = clamp(d-17,1,50);
-  recompute();
-}
-function onEnvChange(){
-  if(eEnv.value==='indoor'){ eWind.value=0; eWind.disabled=true; } else { eWind.disabled=false; }
-  recompute();
-}
+function buildMakeIndex(){ gridIndex.clear(); temps = GRID.meta.temps.slice(); winds = GRID.meta.winds.slice(); for(const r of GRID.grid){ gridIndex.set(`${r.indoor_outdoor}|${r.temp_F}|${r.wind_mph}|${r.distance}`, r); } }
+function buildAttemptIndex(){ attemptIndex.clear(); for(const r of ATTEMPT.grid){ attemptIndex.set(`${r.indoor_outdoor}|${r.score_bin}|${r.time_bin}|${r.ytg_bin}|${r.distance}`, r); } }
+function populateKickers(){ KMAP.clear(); kickerSel.innerHTML = `<option value="">— none —</option>`; const frag = document.createDocumentFragment(); const sorted = [...KICKERS].sort((a,b)=> (b.attempts_eff||0) - (a.attempts_eff||0)); for(const k of sorted){ const opt = document.createElement('option'); opt.value = k.kicker_id; opt.textContent = `${k.kicker_name || k.kicker_id} (effAtt=${(k.attempts_eff||0).toFixed(1)})`; frag.appendChild(opt); KMAP.set(k.kicker_id, k); } kickerSel.appendChild(frag); }
 
-/* ---------- Core recompute ---------- */
-function scenario(){
-  return {
-    dist: clamp(parseInt(eDistance.value,10),18,68),
-    env: eEnv.value,
-    temp: parseFloat(eTemp.value),
-    wind: parseFloat(eWind.value) || 0,
-    band: parseInt(eBand.value,10),
-    kid: eKicker.value || null,
-    rec: parseFloat(eRec.value)
-  };
+function neighbors(val, arr){ if (arr.length===0) return [val,val]; if (val <= arr[0]) return [arr[0], arr[0]]; if (val >= arr[arr.length-1]) return [arr[arr.length-1], arr[arr.length-1]]; for (let i=0; i<arr.length-1; i++){ if (val >= arr[i] && val <= arr[i+1]) return [arr[i], arr[i+1]]; } return [arr[0], arr[0]]; }
+function nearest(val, arr){ if(!arr || arr.length===0) return val; let best = arr[0], bd = Math.abs(val-arr[0]); for(const x of arr){ const d = Math.abs(val-x); if (d<bd){ bd=d; best=x; } } return best; }
+function lookupMake(env, temp, wind, dist){ return gridIndex.get(`${env}|${temp}|${wind}|${dist}`) || null; }
+function interpBilinearLogit(env, temp, wind, dist){ if (env === 'indoor') wind = 0; const [t0,t1]=neighbors(temp, temps), [w0,w1]=neighbors(wind, winds); const sameT=(t0===t1), sameW=(w0===w1); const r00=lookupMake(env,t0,w0,dist), r10=lookupMake(env,t1,w0,dist), r01=lookupMake(env,t0,w1,dist), r11=lookupMake(env,t1,w1,dist); if (!r00 || (!sameT && !r10) || (!sameW && !r01) || (!sameT && !sameW && !r11)){ const tN=nearest(temp,temps), wN=(env==='indoor'?0:nearest(wind,winds)); const r=lookupMake(env,tN,wN,dist); if (!r) return null; return {mean:r.prob_mean, lo:r.prob_p10, hi:r.prob_p90, baseMean:r.prob_mean, mode:"nearest"}; } function blend(field){ const L00=logit(r00[field]), L10=sameT?L00:logit(r10[field]); const L01=sameW?L00:logit(r01[field]), L11=(sameT&&sameW)?L00:logit(r11[field]); const wt=sameT?0:(temp-t0)/(t1-t0), ww=sameW?0:(wind-w0)/(w1-w0); const L0=L00*(1-wt)+L10*wt, L1=L01*(1-wt)+L11*wt; return sigmoid(L0*(1-ww)+L1*ww); } return {mean:blend("prob_mean"), lo:blend("prob_p10"), hi:blend("prob_p90"), baseMean:blend("prob_mean"), mode:"bilinear"}; }
+
+// kicker band blending
+const BAND_BOUNDS = { short:39, mid:49, long:59 };
+const BLEND_W = 2;
+function bandWeightsForDistance(d){ if (d <= BAND_BOUNDS.short - BLEND_W) return {short:1}; if (d <  BAND_BOUNDS.short + BLEND_W){ const t=(d-(BAND_BOUNDS.short-BLEND_W))/(2*BLEND_W); return {short:1-t, mid:t}; } if (d <= BAND_BOUNDS.mid - BLEND_W) return {mid:1}; if (d <  BAND_BOUNDS.mid + BLEND_W){ const t=(d-(BAND_BOUNDS.mid-BLEND_W))/(2*BLEND_W); return {mid:1-t, long:t}; } if (d <= BAND_BOUNDS.long - BLEND_W) return {long:1}; if (d <  BAND_BOUNDS.long + BLEND_W){ const t=(d-(BAND_BOUNDS.long-BLEND_W))/(2*BLEND_W); return {long:1-t, xlong:t}; } return {xlong:1}; }
+function kickerShiftForDistance(krec, d){ if (!krec || !krec.bands) return {delta:0, se:0}; const w=bandWeightsForDistance(d); let delta=0, var_sum=0, wsum=0; for (const band of Object.keys(w)){ const ww=w[band], b=krec.bands[band]; if (!b) continue; const dlt=(typeof b.delta_logit==="number")?b.delta_logit:0; const se=(typeof b.se==="number")?b.se:0; delta += ww*dlt; var_sum += (ww*ww)*(se*se); wsum += ww; } if (wsum<=0) return {delta:0,se:0}; return {delta, se:Math.sqrt(var_sum)}; }
+
+function ciScale(band){ if (band===80) return 1.0; if (band===68) return 0.68/0.80; if (band===90) return 0.90/0.80; return 1.0; }
+function lookupAttempt(env, sBin, tBin, yBin, dist){ return attemptIndex.get(`${env}|${sBin}|${tBin}|${yBin}|${dist}`) || null; }
+
+function stateFromControls(){ return { d:clamp(parseInt(distance.value,10)||61,18,68), env:envSel.value, t:parseFloat(tempInp.value)||65, w:parseFloat(windInp.value)||0, kid:kickerSel.value||'', band:parseInt(bandSel.value,10)||80, s:scoreBin.value, tm:timeBin.value, y:ytgBin.value, showAttempt: toggleAttempt.checked, axes: toggleAxes.checked }; }
+function controlsFromState(s){ distance.value=s.d; uiDist.value=s.d; envSel.value=s.env; tempInp.value=s.t; windInp.value=s.w; kickerSel.value=s.kid||''; bandSel.value=s.band; scoreBin.value=s.s; timeBin.value=s.tm; ytgBin.value=s.y; toggleAttempt.checked = !!s.showAttempt; toggleAxes.checked = !!s.axes; onEnvChange(); }
+function encodeState(s){ const p=new URLSearchParams(s); return p.toString(); }
+function decodeState(qs){ const p=new URLSearchParams(qs); const num=(k,def)=>{const v=parseFloat(p.get(k)); return Number.isFinite(v)?v:def}; const int=(k,def)=>{const v=parseInt(p.get(k),10); return Number.isFinite(v)?v:def}; return { d:int('d',61), env:p.get('env')||'outdoor', t:num('t',65), w:num('w',5), kid:p.get('kid')||'', band:int('band',80), s:p.get('s')||'close', tm:p.get('tm')||'late', y:p.get('y')||'med', showAttempt: p.get('showAttempt')!=='false', axes: p.get('axes')!=='false' }; }
+
+function recompute(){ if (!GRID || !ATTEMPT || !SENS) return; const st = stateFromControls(); uiDist.value = st.d; // Base league make (no kicker)
+  const base = interpBilinearLogit(st.env, st.t, st.w, st.d); if (!base){ statMake.textContent='No data'; statMakeCI.textContent=''; detailsEl.textContent=''; kmetaEl.textContent=''; drawChart(st.env,st.t,st.w,st.d,st); return; }
+  let pMakeLeague = base.baseMean; // before kicker
+  let pMean = base.mean, pLo = base.lo, pHi = base.hi;
+  // Kicker adjust in logit space
+  const kid = st.kid; let kmeta = ""; if (kid){ const krec = KMAP.get(kid); const ks = kickerShiftForDistance(krec, st.d); const delta = ks.delta, se = ks.se||0; pMean = sigmoid(logit(pMean) + delta); pLo = sigmoid(logit(pLo) + delta - se); pHi = sigmoid(logit(pHi) + delta + se); const bands = Object.keys(krec?.bands||{}).join(', '); kmeta = `Kicker: ${krec?.kicker_name || kid} · effAtt=${(krec?.attempts_eff||0).toFixed(1)} · bands=[${bands}] · Δlogit(d)=${delta.toFixed(3)}`; }
+  kmetaEl.textContent = kmeta;
+  // Rescale CI to selected band
+  const lmean = logit(pMean), scale = ciScale(st.band); let llo = logit(pLo), lhi = logit(pHi), half=(lhi-llo)/2; llo = lmean - half*scale; lhi = lmean + half*scale; pLo = sigmoid(llo); pHi = sigmoid(lhi);
+  // Attempt base (league context)
+  const rA = lookupAttempt(st.env, st.s, st.tm, st.y, st.d); const pAttemptBase = rA ? rA.prob_attempt_mean : 0.0; const pAttemptBase_lo = rA ? rA.prob_attempt_p10 : 0.0; const pAttemptBase_hi = rA ? rA.prob_attempt_p90 : 0.0;
+  // Attempt adjusted by kicker advantage (coupling)
+  const A=SENS.A, B=SENS.B, C=SENS.C; const lA = A + C*logit(pAttemptBase) + B*(logit(pMean) - logit(pMakeLeague)); const pAttemptAdj = sigmoid(lA);
+  // Overall chance to get 3 points
+  const pOverall = pAttemptAdj * pMean;
+  // Headline stats
+  statMake.textContent = pct(pMean); statMakeCI.textContent = `(CI ${st.band}%: ${pct(pLo)}–${pct(pHi)})`; statAttemptBase.textContent = pct(pAttemptBase); statAttemptBaseCI.textContent = `(p10–p90: ${pct(pAttemptBase_lo)}–${pct(pAttemptBase_hi)})`; statAttemptAdj.textContent = pct(pAttemptAdj); statOverall.textContent = pct(pOverall);
+  const wShow = st.env==='indoor'?0:st.w; detailsEl.textContent = `Inputs: ${st.d} yd, ${st.env}, ${Math.round(st.t)}°F, wind ${Math.round(wShow)} mph · Score=${st.s}, Time=${st.tm}, YTG=${st.y} · ${base.mode}`;
+  drawChart(st.env, st.t, st.w, st.d, st);
+  // update URL (debounced)
+  if (history.replaceState){ const s = encodeState(st); history.replaceState(null,'',`?${s}`); }
 }
-function basePoint(sc){
-  const r = interpBilinearLogit(sc.env, sc.temp, sc.wind, sc.dist);
-  if(!r) return null;
-  return {...r};
-}
-function applyKickerShift(p, krec, recBlend){
-  const d = kickerDelta(recBlend, krec);
-  const se = krec.se ?? 0;
-  let m = sigmoid(logit(p.mean) + d);
-  let lo = sigmoid(logit(p.lo) + d - se);
-  let hi = sigmoid(logit(p.hi) + d + se);
-  return {mean:m, lo, hi, delta:d, se};
-}
-function adjustBand(p, band){
-  const scale=ciScale(band);
-  const Lm=logit(p.mean), Llo=logit(p.lo), Lhi=logit(p.hi);
-  const half=(Lhi-Llo)/2;
-  return {mean:p.mean, lo:sigmoid(Lm - half*scale), hi:sigmoid(Lm + half*scale)};
-}
+const recomputeDebounced = (()=>{ let t=null; return ()=>{ clearTimeout(t); t=setTimeout(recompute, 30); }; })();
 
-/* Attempt probability (optional artifact) */
-function attemptProb(sc){
-  if(!ATTEMPT_GRID) return null;
-  // same bilinear interpolation but fields attempt_mean/p10/p90 or prob_mean if named that way
-  const [t0,t1]=neighbors(sc.temp,temps), [w0,w1]=neighbors(sc.wind, winds);
-  const key=(env,temp,wind,dist)=>`${env}|${temp}|${wind}|${dist}`;
-  const idx=(env,temp,wind,dist)=> ATTEMPT_GRID.grid_index?.[key(env,temp,wind,dist)] ?? null;
-
-  // Build a local lookup using GRID index if ATTEMPT_GRID has similar structure:
-  function lookup(env,temp,wind,dist){
-    const k=`${env}|${temp}|${wind}|${dist}`;
-    return (ATTEMPT_GRID.grid_map && ATTEMPT_GRID.grid_map[k]) || ATTEMPT_GRID.grid?.find(r => r.indoor_outdoor===env && r.temp_F===temp && r.wind_mph===wind && r.distance===dist) || null;
-  }
-  function blend(field){
-    const r00=lookup(sc.env,t0,w0,sc.dist), r10=lookup(sc.env,t1,w0,sc.dist),
-          r01=lookup(sc.env,t0,w1,sc.dist), r11=lookup(sc.env,t1,w1,sc.dist);
-    if(!r00||!r10||!r01||!r11) return null;
-    const wt=(t1===t0)?0:(sc.temp-t0)/(t1-t0), ww=(w1===w0)?0:(sc.wind-w0)/(w1-w0);
-    const f=(r)=> r[field] ?? r.attempt_mean ?? r.prob_mean;
-    const v00=f(r00), v10=f(r10), v01=f(r01), v11=f(r11);
-    const v0=v00*(1-wt)+v10*wt, v1=v01*(1-wt)+v11*wt;
-    return v0*(1-ww)+v1*ww;
-  }
-  const mean=blend("attempt_mean"); if(mean==null) return null;
-  const lo=blend("attempt_p10") ?? Math.max(0, mean-0.1);
-  const hi=blend("attempt_p90") ?? Math.min(1, mean+0.1);
-  return {mean, lo, hi};
-}
-
-/* ---------- Render chart ---------- */
-function drawChart(sc, pBase, pAdj){
-  const W=900, H=280, PAD=36;
-  const xmin=18,xmax=68,ymin=0,ymax=1;
-  const sx=x=> PAD + (x-xmin)/(xmax-xmin)*(W-2*PAD);
-  const sy=y=> H - PAD - (y-ymin)/(ymax-ymin)*(H-2*PAD);
-
-  // Lines across distance
-  const xs=[], mean=[], lo=[], hi=[], meanAvg=[];
-  for(let d=18; d<=68; d++){
-    const b = interpBilinearLogit(sc.env, sc.temp, sc.wind, d);
-    if(!b) continue;
-    let m=b.mean, l=b.lo, h=b.hi;
-    const showAvg = (eShowAvg.value==='yes');
-    if(sc.kid){
-      const kre = KICKERS.find(k=>k.kicker_id===sc.kid);
-      if(kre){ const adj=applyKickerShift({mean:m,lo:l,hi:h}, kre, sc.rec); m=adj.mean; l=adj.lo; h=adj.hi; }
-    }
-    xs.push(d); mean.push(m); lo.push(l); hi.push(h);
-    meanAvg.push(b.mean);
-  }
-
-  const path=(ys)=> xs.map((x,i)=> `${i?'L':'M'} ${sx(x).toFixed(1)} ${sy(ys[i]).toFixed(1)}`).join(' ');
-  const bandPath = (upper,lower)=>{
-    const up=xs.map((x,i)=> `${i?'L':'M'} ${sx(x).toFixed(1)} ${sy(upper[i]).toFixed(1)}`).join(' ');
-    const dn=xs.slice().reverse().map((x,i)=> `L ${sx(x).toFixed(1)} ${sy(lower[lower.length-1-i]).toFixed(1)}`).join(' ');
-    return `${up} ${dn} Z`;
-  };
-
-  const selX = sx(sc.dist);
-  const avgPath = path(meanAvg);
-
-  eChart.innerHTML = `
-    <defs>
-      <linearGradient id="grad" x1="0" x2="0" y1="0" y2="1">
-        <stop offset="0%" stop-color="${getComputedStyle(document.documentElement).getPropertyValue('--acc').trim()}33"/>
-        <stop offset="100%" stop-color="transparent"/>
-      </linearGradient>
-    </defs>
-    <rect x="0" y="0" width="${W}" height="${H}" rx="12" fill="transparent"/>
-    <g stroke="var(--border)" opacity=".8">
-      ${[0.2,0.4,0.6,0.8].map(p=> `<line x1="${PAD}" x2="${W-PAD}" y1="${sy(p)}" y2="${sy(p)}"></line>`).join('')}
-      <line x1="${sx(20)}" x2="${sx(20)}" y1="${PAD}" y2="${H-PAD}"></line>
-      <line x1="${sx(30)}" x2="${sx(30)}" y1="${PAD}" y2="${H-PAD}"></line>
-      <line x1="${sx(40)}" x2="${sx(40)}" y1="${PAD}" y2="${H-PAD}"></line>
-      <line x1="${sx(50)}" x2="${sx(50)}" y1="${PAD}" y2="${H-PAD}"></line>
-      <line x1="${sx(60)}" x2="${sx(60)}" y1="${PAD}" y2="${H-PAD}"></line>
+function drawChart(env, temp, wind, dSel, st){ const W=880,H=280,PAD=38; const xs=[], meanYs=[], loYs=[], hiYs=[], attYs=[]; for(let d=18; d<=68; d++){ const r = interpBilinearLogit(env, temp, wind, d); if(!r) continue; xs.push(d); meanYs.push(r.mean); loYs.push(r.lo); hiYs.push(r.hi); const kid = st.kid; if (kid){ const krec = KMAP.get(kid); const ks = kickerShiftForDistance(krec, d); meanYs[meanYs.length-1] = sigmoid(logit(meanYs[meanYs.length-1]) + ks.delta); loYs[loYs.length-1] = sigmoid(logit(loYs[loYs.length-1]) + ks.delta - (ks.se||0)); hiYs[hiYs.length-1] = sigmoid(logit(hiYs[hiYs.length-1]) + ks.delta + (ks.se||0)); }
+    if (st.showAttempt){ const rA = lookupAttempt(env, st.s, st.tm, st.y, d); attYs.push(rA ? rA.prob_attempt_mean : 0); } }
+  const xmin=18,xmax=68,ymin=0,ymax=1; const sx=x=>PAD+(x-xmin)/(xmax-xmin)*(W-2*PAD); const sy=y=>H-PAD-(y-ymin)/(ymax-ymin)*(H-2*PAD); const path=(xs,ys)=>xs.map((x,i)=>`${i?'L':'M'} ${sx(x).toFixed(1)} ${sy(ys[i]).toFixed(1)}`).join(' ');
+  const meanPath=path(xs,meanYs), loPath=path(xs,loYs), hiPath=path(xs,hiYs); const bandPath = meanYs.length?(()=>{ const up=xs.map((x,i)=>`${i?'L':'M'} ${sx(x).toFixed(1)} ${sy(hiYs[i]).toFixed(1)}`).join(' '); const dn=xs.slice().reverse().map((x,i)=>`L ${sx(x).toFixed(1)} ${sy(loYs[loYs.length-1-i]).toFixed(1)}`).join(' '); return `${up} ${dn} Z`; })() : ""; const xd = sx(dSel);
+  const ticksX=[20,30,40,50,60,68]; const ticksY=[0.2,0.4,0.6,0.8,1.0];
+  let attemptPath = '';
+  if (st.showAttempt && attYs.length===xs.length){ attemptPath = path(xs,attYs); }
+  const showAxes = toggleAxes.checked;
+  chartEl.innerHTML = `
+    <rect x="0" y="0" width="${W}" height="${H}" fill="#0f141b"/>
+    <g stroke="${showAxes? '#1f2a38':'transparent'}" stroke-width="1" opacity="0.9">
+      ${ticksY.map(p=>`<line x1="${PAD}" x2="${W-PAD}" y1="${sy(p)}" y2="${sy(p)}"></line>`).join('')}
+      ${ticksX.map(x=>`<line x1="${sx(x)}" x2="${sx(x)}" y1="${PAD}" y2="${H-PAD}"></line>`).join('')}
     </g>
-    <path d="${bandPath(hi,lo)}" fill="url(#grad)" stroke="none"></path>
-    <path d="${path(mean)}" fill="none" stroke="var(--acc)" stroke-width="2.4"></path>
-    ${(eShowAvg.value==='yes') ? `<path d="${avgPath}" fill="none" stroke="var(--muted)" stroke-dasharray="5 4" stroke-width="1.6"></path>` : '' }
-    <line x1="${selX}" x2="${selX}" y1="${PAD}" y2="${H-PAD}" stroke="var(--warn)" stroke-width="2" stroke-dasharray="6 5"></line>
-    <text x="${selX+6}" y="${PAD+12}" fill="var(--warn)" font-size="12" font-weight="700">${sc.dist} yd</text>
-  `;
+    ${showAxes? `<g fill="#a6c1da" font-size="10">
+      ${ticksY.map(p=>`<text x="${PAD-8}" y="${sy(p)+3}" text-anchor="end">${Math.round(p*100)}</text>`).join('')}
+      ${ticksX.map(x=>`<text x="${sx(x)}" y="${H-PAD+14}" text-anchor="middle">${x}</text>`).join('')}
+      <text x="${W/2}" y="${H-4}" text-anchor="middle">Distance (yd)</text>
+      <text transform="translate(12 ${H/2}) rotate(-90)" text-anchor="middle">Probability (%)</text>
+    </g>` : ''}
+    <path d="${bandPath}" fill="#3da9fc22" stroke="none"></path>
+    <path d="${meanPath}" fill="none" stroke="#3da9fc" stroke-width="2"></path>
+    <path d="${loPath}"   fill="none" stroke="#3da9fc55" stroke-width="1"></path>
+    <path d="${hiPath}"   fill="none" stroke="#3da9fc55" stroke-width="1"></path>
+    ${attemptPath? `<path d="${attemptPath}" fill="none" stroke="#7ae582" stroke-dasharray="5 4" stroke-width="1.6"></path>`: ''}
+    <line x1="${xd}" x2="${xd}" y1="${PAD}" y2="${H-PAD}" stroke="#ffcc66" stroke-width="2" stroke-dasharray="4 4"></line>`;
 }
 
-/* ---------- Table ---------- */
-function renderTable(){
-  const sc=scenario();
-  const base=basePoint(sc); if(!base){ eTbl.innerHTML=""; return; }
-  const league=base.mean;
-  const rows=[];
-  const q=(eFilter.value||"").toLowerCase();
-  for(const k of KICKERS){
-    if(q && !((k.kicker_name||"").toLowerCase().includes(q))) continue;
-    const d=kickerDelta(sc.rec, k);
-    const se=k.se??0;
-    const p = sigmoid(logit(league)+d);
-    rows.push({
-      name:k.kicker_name||k.kicker_id, eff:k.eff_attempts??"", rec:(k.recency_score!=null? k.recency_score.toFixed(2):""), d, p, edge:p-league
-    });
-  }
-  rows.sort((a,b)=> b.p - a.p);
-  eTbl.innerHTML = rows.slice(0,40).map(r=>`
-    <tr>
-      <td>${r.name}</td>
-      <td>${r.eff}</td>
-      <td>${r.rec}</td>
-      <td>${fmt(r.d,3)}</td>
-      <td>${pct(r.p)}</td>
-      <td>${(r.edge>=0?'+':'')}${pct(r.edge)}</td>
-    </tr>
-  `).join('');
-}
-function downloadCSV(){
-  const sc=scenario(); const base=basePoint(sc); if(!base) return;
-  const league=base.mean;
-  let csv="kicker,eff_attempts,recency,delta_logit,make_pct,edge_pct\n";
-  const q=(eFilter.value||"").toLowerCase();
-  for(const k of KICKERS){
-    if(q && !((k.kicker_name||"").toLowerCase().includes(q))) continue;
-    const d=kickerDelta(sc.rec, k);
-    const p=sigmoid(logit(league)+d), edge=p-league;
-    csv += `"${(k.kicker_name||k.kicker_id)}",${k.eff_attempts??""},${k.recency_score??""},${d},${(p*100).toFixed(2)},${(edge*100).toFixed(2)}\n`;
-  }
-  const blob=new Blob([csv],{type:"text/csv"}), a=document.createElement('a');
-  a.href=URL.createObjectURL(blob); a.download="kicker_rankings.csv"; a.click(); URL.revokeObjectURL(a.href);
-}
+function csvDownload(){ const st=stateFromControls(); let rows=[["distance","make_mean","make_lo","make_hi","attempt_mean","attempt_lo","attempt_hi"]]; for(let d=18; d<=68; d++){ const base = interpBilinearLogit(st.env, st.t, st.w, d); if (!base) continue; let m=base.mean, lo=base.lo, hi=base.hi; if (st.kid){ const krec=KMAP.get(st.kid); const ks=kickerShiftForDistance(krec,d); m=sigmoid(logit(m)+ks.delta); lo=sigmoid(logit(lo)+ks.delta-(ks.se||0)); hi=sigmoid(logit(hi)+ks.delta+(ks.se||0)); }
+  const rA = lookupAttempt(st.env, st.s, st.tm, st.y, d); const a=rA? rA.prob_attempt_mean:0, alo=rA? rA.prob_attempt_p10:0, ahi=rA? rA.prob_attempt_p90:0; rows.push([d,m,lo,hi,a,alo,ahi]); }
+  const csv = rows.map(r=>r.join(',')).join('\n'); const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='fg_profile.csv'; a.click(); setTimeout(()=>URL.revokeObjectURL(url),500); }
 
-/* ---------- Recompute & UI KPIs ---------- */
-function recompute(){
-  if(!GRID) return;
-  const sc=scenario();
-  const base=basePoint(sc);
-  if(!base){
-    eDetails.innerHTML='<span class="err">No grid coverage at these settings.</span>';
-    eKMeta.textContent='—'; eMake.textContent='—'; eBandKPI.textContent='—'; eEdge.textContent='—';
-    drawChart(sc,{},{});
-    return;
-  }
-  let show=base, delta=0, se=0, kickerName='—';
-  if(sc.kid){
-    const kre=KICKERS.find(k=>k.kicker_id===sc.kid);
-    if(kre){
-      const adj=applyKickerShift(base, kre, sc.rec);
-      show=adjustBand(adj, sc.band);
-      delta=adj.delta; se=adj.se; kickerName=kre.kicker_name||kre.kicker_id;
-      eKMeta.textContent = `Kicker: ${kickerName} · Δlogit=${fmt(delta)} · SE=${fmt(se)} · recency=${fmt(kre.recency_score??0,2)}`;
-    } else {
-      show=adjustBand(base, sc.band); eKMeta.textContent="—";
-    }
-  } else {
-    show=adjustBand(base, sc.band); eKMeta.textContent="—";
-  }
+function pngDownload(){ // convert SVG to PNG
+  const svg = chartEl; const xml = new XMLSerializer().serializeToString(svg); const svg64 = 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(xml); const img = new Image(); img.onload = function(){ const W=svg.viewBox.baseVal.width || svg.clientWidth, H=svg.viewBox.baseVal.height || svg.clientHeight; const c=document.createElement('canvas'); c.width=W; c.height=H; const ctx=c.getContext('2d'); ctx.fillStyle='#0f141b'; ctx.fillRect(0,0,W,H); ctx.drawImage(img,0,0); c.toBlob(b=>{ const url=URL.createObjectURL(b); const a=document.createElement('a'); a.href=url; a.download='fg_profile.png'; a.click(); setTimeout(()=>URL.revokeObjectURL(url),500); },'image/png'); }; img.src=svg64; }
 
-  // KPIs
-  eMake.textContent = pct(show.mean);
-  eBandKPI.textContent = `CI ${sc.band}%: ${pct(show.lo)} – ${pct(show.hi)}`;
-  eEdge.textContent = ((show.mean-base.mean)>=0?'+':'') + pct(show.mean-base.mean);
+function tryFetch(url){ return fetch(url).then(r=>{ if(!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }); }
+function readFileAsJSON(input){ return new Promise((res,rej)=>{ if(!input.files||!input.files[0]) return rej(new Error("No file")); const fr=new FileReader(); fr.onload=()=>{ try{res(JSON.parse(fr.result))}catch(e){rej(e)} }; fr.onerror=()=>rej(fr.error); fr.readAsText(input.files[0]); }); }
 
-  // Attempt likelihood (if artifact present)
-  const at=attemptProb(sc);
-  if(at){
-    eAttempt.textContent = pct(at.mean);
-    eAttemptMeta.textContent = `CI: ${pct(at.lo)}–${pct(at.hi)}`;
-  }else{
-    eAttempt.textContent = '—';
-    eAttemptMeta.textContent = 'No attempt model loaded';
-  }
-
-  // Details
-  const wShow = (sc.env==='indoor'?0:sc.wind);
-  eDetails.textContent = `LOS ${clamp(sc.dist-17,1,50)} • ${sc.dist} yd • ${sc.env} • ${Math.round(sc.temp)}°F • wind ${Math.round(wShow)} mph`;
-
-  // Chart + table
-  drawChart(sc, base, show);
-  renderTable();
-
-  // Update URL (shareable)
-  const params = new URLSearchParams({d:sc.dist,e:sc.env,t:Math.round(sc.temp),w:wShow,k:sc.kid||'',r:sc.rec, b:sc.band, a:eShowAvg.value});
-  history.replaceState(null,"",`?${params.toString()}`);
-}
-
-/* ---------- Share & Export ---------- */
-el('btnShare').onclick=async()=>{
-  try{ await navigator.clipboard.writeText(location.href); el('btnShare').textContent="Copied!"; setTimeout(()=>el('btnShare').textContent="Copy Share Link",1200); }
-  catch{ /* noop */ }
-};
-el('btnPNG').onclick=()=>{
-  const svg=eChart; const xml=new XMLSerializer().serializeToString(svg);
-  const img=new Image(); const blob=new Blob([xml],{type:"image/svg+xml;charset=utf-8"}); const url=URL.createObjectURL(blob);
-  img.onload=function(){
-    const canvas=document.createElement('canvas'); canvas.width=1800; canvas.height=560;
-    const ctx=canvas.getContext('2d'); ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--surface'); ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.drawImage(img,0,0,canvas.width,canvas.height);
-    const a=document.createElement('a'); a.download='fg_chart.png'; a.href=canvas.toDataURL('image/png'); a.click(); URL.revokeObjectURL(url);
-  };
-  img.src=url;
-};
-
-/* ---------- Boot ---------- */
-async function boot(){
-  eDiagBody.innerHTML="";
-  const g=await tryFetchOneOf(FILES.grid); addDiagRow("Grid", g.tried, g.status, g.ok); if(g.ok) GRID=g.data;
-  const k=await tryFetchOneOf(FILES.kickers); addDiagRow("Kickers", k.tried, k.status, k.ok); if(k.ok) KICKERS=k.data;
-  const ag=await tryFetchOneOf(FILES.attemptGrid); addDiagRow("Attempt Grid (opt)", ag.tried, ag.status, ag.ok); if(ag.ok) ATTEMPT_GRID=ag.data;
-  const asv=await tryFetchOneOf(FILES.attemptSens); addDiagRow("Attempt Sens (opt)", asv.tried, asv.status, asv.ok); if(asv.ok) ATTEMPT_SENS=asv.data;
-
-  if(!GRID || !KICKERS){
-    eLoadMsg.innerHTML='<span class="warn">Missing required artifacts — upload below or place JSONs next to index.html</span>';
-    el('btnUseUploads').onclick=async()=>{
-      try{
-        if(!GRID) GRID=await readFileAsJSON(el('fileGrid'));
-        if(!KICKERS) KICKERS=await readFileAsJSON(el('fileKickers'));
-        if(!ATTEMPT_GRID && el('fileAttempt').files.length) ATTEMPT_GRID=await readFileAsJSON(el('fileAttempt'));
-        if(!ATTEMPT_SENS && el('fileSens').files.length) ATTEMPT_SENS=await readFileAsJSON(el('fileSens'));
-        afterLoad();
-      }catch(e){ eLoadMsg.innerHTML=`<span class="err">Upload parse error: ${e.message}</span>`; }
-    };
-  } else {
-    eLoadMsg.textContent="Artifacts loaded.";
+async function boot(){ // try to fetch colocated JSONs
+  try{
+    loadMsgEl.textContent = "Loading JSONs via fetch…";
+    GRID    = await tryFetch('./fg_prob_grid_distance_env_temp_wind.json');
+    KICKERS = await tryFetch('./kicker_deltas_logit_banded.json');
+    ATTEMPT = await tryFetch('./fg_attempt_grid_distance_env_context.json');
+    SENS    = await tryFetch('./attempt_sensitivity.json');
+    loadMsgEl.textContent = "Loaded via fetch.";
     afterLoad();
+  }catch(e){
+    console.warn('Fetch failed, using demo or uploads', e);
+    // Attempt embedded demo data
+    try{
+      GRID = JSON.parse(document.getElementById('demo_grid').textContent);
+      KICKERS = JSON.parse(document.getElementById('demo_kickers').textContent);
+      ATTEMPT = JSON.parse(document.getElementById('demo_attempt').textContent);
+      SENS = JSON.parse(document.getElementById('demo_sens').textContent);
+      loadMsgEl.innerHTML = `<span class="warn">Demo data loaded. Upload real JSONs or host alongside this file.</span>`;
+      document.getElementById('fallbackUpload').style.display = "flex";
+      afterLoad();
+    }catch(err){
+      loadMsgEl.innerHTML = `<span class="warn">No data. Upload the four JSONs below or run a local server.</span>`;
+      document.getElementById('fallbackUpload').style.display = "flex";
+    }
+    btnUseUploads.onclick = async ()=>{
+      try{
+        GRID    = await readFileAsJSON(fileGrid);
+        KICKERS = await readFileAsJSON(fileKickers);
+        ATTEMPT = await readFileAsJSON(fileAttempt);
+        SENS    = await readFileAsJSON(fileSens);
+        loadMsgEl.textContent = "Loaded via file uploads.";
+        document.getElementById('fallbackUpload').style.display = "none";
+        afterLoad();
+      }catch(err){
+        loadMsgEl.innerHTML = `<span class="warn">Upload parse error: ${err.message}</span>`;
+      }
+    };
   }
 }
-function afterLoad(){
-  buildIndex(); kickerOptions();
-  // read query params
-  const q=new URLSearchParams(location.search);
-  const d=+q.get('d')||45, e=q.get('e')||'indoor', t=+q.get('t')||70, w=+q.get('w')||0, k=q.get('k')||'', r=+(q.get('r')||1), b=+(q.get('b')||80), a=q.get('a')||'no';
-  eDistance.value=d; eUiDist.value=d; eLOS.value=clamp(d-17,1,50);
-  eEnv.value=e; eTemp.value=t; eWind.value=(e==='indoor'?0:w); eKicker.value=k; eRec.value=r; eBand.value=b; eShowAvg.value=a;
-  onEnvChange(); // sets wind disabled when indoor
-  recompute();
+
+function afterLoad(){ buildMakeIndex(); buildAttemptIndex(); populateKickers(); kickerSearch.value=''; filterKickers(''); attachEvents(); // from URL if present
+  const st = decodeState(location.search.slice(1)); controlsFromState(st); recompute(); }
+
+function filterKickers(q){ const opts=[...kickerSel.options]; const term=(q||'').toLowerCase(); opts.forEach((o,i)=>{ if(i===0) return; const t=o.textContent.toLowerCase(); o.hidden = !(t.includes(term)); }); }
+
+function attachEvents(){ distance.addEventListener('input', ()=>{uiDist.value=distance.value; recomputeDebounced();}); uiDist.addEventListener('input', ()=>{distance.value=clamp(parseInt(uiDist.value,10)||61,18,68); recomputeDebounced();}); envSel.addEventListener('change', onEnvChange); tempInp.addEventListener('input', recomputeDebounced); windInp.addEventListener('input', recomputeDebounced); kickerSel.addEventListener('change', recomputeDebounced); bandSel.addEventListener('change', recomputeDebounced); scoreBin.addEventListener('change', recomputeDebounced); timeBin.addEventListener('change', recomputeDebounced); ytgBin.addEventListener('change', recomputeDebounced); toggleAttempt.addEventListener('change', recomputeDebounced); toggleAxes.addEventListener('change', recomputeDebounced);
+  document.querySelectorAll('[data-preset-temp]').forEach(b=> b.addEventListener('click',()=>{ tempInp.value=b.getAttribute('data-preset-temp'); recompute(); })); document.querySelectorAll('[data-preset-wind]').forEach(b=> b.addEventListener('click',()=>{ windInp.value=b.getAttribute('data-preset-wind'); recompute(); }));
+  kickerSearch.addEventListener('input', (e)=> filterKickers(e.target.value));
+  btnCSV.addEventListener('click', ()=>{ csvDownload(); showToast('CSV downloaded'); }); btnPNG.addEventListener('click', ()=>{ pngDownload(); showToast('PNG downloaded'); });
+  btnReset.addEventListener('click', ()=>{ const def={d:61,env:'outdoor',t:65,w:5,kid:'',band:80,s:'close',tm:'late',y:'med', showAttempt:true, axes:true}; controlsFromState(def); recompute(); showToast('Reset'); });
+  btnShare.addEventListener('click', ()=>{ const s=encodeState(stateFromControls()); navigator.clipboard?.writeText(location.origin+location.pathname+`?${s}`); showToast('Permalink copied'); });
+  // keyboard nudges for distance
+  uiDist.addEventListener('keydown', (e)=>{ if(e.key==='ArrowUp'||e.key==='ArrowDown'){ e.preventDefault(); const delta = (e.key==='ArrowUp'? 1 : -1); const v=clamp(parseInt(uiDist.value,10)||61,18,68)+delta; uiDist.value=v; distance.value=v; recomputeDebounced(); }});
+  // Copy chart to clipboard (PNG) via keyboard
+  chartEl.addEventListener('keydown', (e)=>{ const meta = e.ctrlKey||e.metaKey; if(meta && e.key.toLowerCase()==='c'){ e.preventDefault(); pngDownload(); }});
 }
+
 boot();
 </script>
 </body>
